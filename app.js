@@ -58,38 +58,25 @@ addEventListener('scroll',update,{passive:true});addEventListener('resize',updat
 const video=document.querySelector('video'),play=document.querySelector('#play');if(reduced){video.pause();play.textContent='▶'}play.onclick=()=>{if(video.paused){video.play().catch(()=>{});play.textContent='Ⅱ';play.setAttribute('aria-label','Приостановить видео')}else{video.pause();play.textContent='▶';play.setAttribute('aria-label','Воспроизвести видео')}};
 
 
-// Front elevations are drawn in centimetre-calibrated coordinates: 3 units = 1 cm.
+// Generated photographs use a common approximate 2m-wide scene.
+// Real artwork dimensions preserve the relative scale between every painting.
 const rooms=[
-{name:'Тёплый минимализм',wall:'#ddd3c2',floor:'#b2a18d',fabric:'#e9e3d6',wood:'#8c6c4e',kind:'sofa',accent:'#998a69'},
-{name:'Терракотовая гостиная',wall:'#974e3d',floor:'#b6a38d',fabric:'#e6d5bd',wood:'#674c3b',kind:'sofa',accent:'#d2ad74'},
-{name:'Северный свет',wall:'#e7e9e6',floor:'#cbbba3',fabric:'#a7b2ad',wood:'#ba9270',kind:'chair',accent:'#4c625e'},
-{name:'Оливковая спальня',wall:'#6c7663',floor:'#b5a58b',fabric:'#ebe4d6',wood:'#6b4e39',kind:'bed',accent:'#b79f75'},
-{name:'Тихая библиотека',wall:'#b2a391',floor:'#806956',fabric:'#6a584a',wood:'#493d32',kind:'library',accent:'#a58b6a'},
-{name:'Белая галерея',wall:'#eeeae3',floor:'#c4c0b8',fabric:'#dfd6c6',wood:'#978573',kind:'bench',accent:'#817d71'},
-{name:'Обеденная зона',wall:'#d0c5b5',floor:'#9e826b',fabric:'#b4a189',wood:'#71523b',kind:'dining',accent:'#736c55'},
-{name:'Графитовый кабинет',wall:'#454a48',floor:'#91816d',fabric:'#827a6a',wood:'#6d4e37',kind:'desk',accent:'#c9ad78'},
-{name:'Песочная прихожая',wall:'#e0cbb5',floor:'#b19c83',fabric:'#d4baa0',wood:'#8c5b3f',kind:'console',accent:'#9a7764'},
-{name:'Мягкий вечер',wall:'#a4a4b1',floor:'#ae9b8d',fabric:'#d4cbd1',wood:'#6a5a54',kind:'sofa',accent:'#726c80'}];
+{name:'Графит и золото',wall:'#3d3b37'},
+{name:'Тёплый беж',wall:'#b7a084'},
+{name:'Оливковый интерьер',wall:'#656952'},
+{name:'Терракотовый вечер',wall:'#9b5c47'},
+{name:'Северный свет',wall:'#d0d0c9'},
+{name:'Глубокий синий',wall:'#323f4e'},
+{name:'Молочный минимализм',wall:'#e6e0d4'},
+{name:'Пудровая гостиная',wall:'#c5a495'},
+{name:'Шоколад и камень',wall:'#58473b'},
+{name:'Мягкий шалфей',wall:'#a5ac98'}
+].map((r,i)=>({...r,image:`assets/interior-${String(i+1).padStart(2,'0')}.webp`,widthCm:200,heightCm:200}));
 const wallView=document.querySelector('#wall-view'),scene=document.querySelector('#room-scene');let roomIndex=0;
-function roomSvg(r){
- const rect=(x,y,w,h,fill,rx=0)=>`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${fill}"/>`;
- const leg=(x,y,h=70)=>rect(x,y,13,h,r.wood,2);
- const lamp=`<path d="M130 720V440Q130 380 200 380" fill="none" stroke="${r.accent}" stroke-width="7"/><path d="M160 414L178 365H220L239 414Z" fill="${r.accent}"/>${rect(98,716,66,8,r.accent,4)}`;
- const plant=`<path d="M1065 665V388" stroke="#5d6651" stroke-width="5" fill="none"/><g fill="#737d60"><ellipse cx="1039" cy="443" rx="19" ry="51" transform="rotate(-45 1039 443)"/><ellipse cx="1086" cy="485" rx="18" ry="48" transform="rotate(40 1086 485)"/><ellipse cx="1043" cy="534" rx="21" ry="49" transform="rotate(-48 1043 534)"/><ellipse cx="1085" cy="395" rx="17" ry="43" transform="rotate(25 1085 395)"/></g><path d="M1019 645H1112L1097 738H1034Z" fill="${r.accent}"/>`;
- let furniture='';
- if(r.kind==='sofa')furniture=`<ellipse cx="600" cy="783" rx="410" ry="29" fill="#000" opacity=".09"/>${leg(295,720)}${leg(895,720)}<g filter="url(#shadow)">${rect(270,550,660,180,r.fabric,35)}${rect(280,605,640,120,r.fabric,22)}${rect(255,595,62,137,r.fabric,20)}${rect(883,595,62,137,r.fabric,20)}<path d="M494 562V662M710 562V662M319 678H881" stroke="#000" opacity=".09" fill="none"/><path d="M319 690H881" stroke="#fff" opacity=".22"/>${rect(335,576,105,88,r.accent,17)}${rect(769,580,99,80,'#c6bcae',17)}</g>${lamp}${plant}`;
- if(r.kind==='chair')furniture=`${plant}${lamp}<g filter="url(#shadow)">${leg(305,700,90)}${leg(480,700,90)}${rect(292,548,225,177,r.fabric,38)}${rect(281,626,247,91,r.fabric,24)}${rect(334,576,141,89,'#c9cec4',20)}</g>${leg(775,673,105)}<ellipse cx="782" cy="662" rx="104" ry="18" fill="${r.wood}"/><path d="M763 625L754 577H795L786 625Z" fill="${r.accent}"/>`;
- if(r.kind==='bed')furniture=`${leg(314,700)}${leg(884,700)}<g filter="url(#shadow)">${rect(290,528,620,195,r.wood,30)}${rect(284,636,632,148,r.fabric,16)}${rect(327,570,228,81,'#f0ece2',24)}${rect(642,570,228,81,'#f0ece2',24)}${rect(284,693,632,91,'#c5bdab',12)}<path d="M310 701H893M310 713H893" stroke="#fff" opacity=".18"/></g>${rect(138,646,107,73,r.wood,4)}${rect(945,646,107,73,r.wood,4)}${leg(145,712,58)}${leg(1030,712,58)}<path d="M179 635V574M985 635V574" stroke="${r.accent}" stroke-width="5"/><path d="M146 578L157 536H199L213 578ZM952 578L963 536H1005L1019 578Z" fill="${r.accent}"/>`;
- if(r.kind==='library')furniture=`${rect(55,170,175,590,r.wood,1)}${rect(970,170,175,590,r.wood,1)}${Array.from({length:5},(_,i)=>`${rect(66,260+i*100,153,6,r.accent)}${rect(981,260+i*100,153,6,r.accent)}${Array.from({length:7},(_,j)=>rect(73+j*20,198+i*100,12,60-(j%3)*9,['#c1ac8b','#777968','#aa8c72'][j%3])).join('')}${Array.from({length:7},(_,j)=>rect(986+j*20,198+i*100,12,60-(j%3)*9,['#b9ab99','#8a7f70','#6c6f62'][j%3])).join('')}`).join('')}${leg(340,700)}${leg(840,700)}${rect(314,598,570,121,r.fabric,21)}${rect(299,652,600,58,r.fabric,12)}${lamp}`;
- if(r.kind==='bench')furniture=`<ellipse cx="600" cy="792" rx="320" ry="17" opacity=".08"/>${leg(330,683,110)}${leg(845,683,110)}${rect(300,655,600,35,r.wood,6)}${rect(320,634,560,25,r.fabric,10)}${rect(150,548,94,210,'#d4cfc5')}${rect(974,608,75,150,'#d4cfc5')}<path d="M179 548Q161 512 183 487Q215 484 209 548Z" fill="${r.accent}"/>`;
- if(r.kind==='dining')furniture=`${leg(359,658,132)}${leg(839,658,132)}${rect(320,618,560,39,r.wood,9)}${[255,470,728,915].map(x=>`${leg(x,719,75)}${leg(x+95,719,75)}${rect(x-13,560,137,162,r.fabric,15)}${rect(x-18,703,147,19,r.wood,4)}`).join('')}<ellipse cx="600" cy="618" rx="52" ry="8" fill="${r.accent}"/><path d="M585 610L577 555H624L615 610Z" fill="${r.accent}"/>${plant}`;
- if(r.kind==='desk')furniture=`${rect(280,627,650,27,r.wood,5)}${leg(300,654,137)}${leg(895,654,137)}${rect(320,659,145,96,r.wood,4)}${rect(341,677,104,3,'#c1a586')}${rect(341,712,104,3,'#c1a586')}${rect(545,663,181,117,r.fabric,21)}${rect(558,604,155,80,r.fabric,20)}${leg(570,763,40)}${leg(684,763,40)}${lamp}${plant}${rect(773,605,73,19,'#c5b79b',2)}`;
- if(r.kind==='console')furniture=`${leg(365,655,129)}${leg(832,655,129)}${rect(335,598,530,62,r.wood,5)}${rect(355,619,490,1,'#0003')}<path d="M393 598Q357 541 391 511Q425 508 413 598Z" fill="${r.accent}"/>${rect(729,580,86,18,'#b6a188',2)}${rect(740,564,73,15,'#e2d6c2',2)}${plant}<ellipse cx="178" cy="737" rx="57" ry="16" fill="${r.wood}"/>${leg(152,730,64)}${leg(190,730,64)}`;
- return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900"><defs><linearGradient id="light" x1="0" y1="0" x2="1" y2=".5"><stop stop-color="#fff" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient><linearGradient id="ground" x2="0" y2="1"><stop stop-color="#000" stop-opacity=".12"/><stop offset="1" stop-color="#fff" stop-opacity=".08"/></linearGradient><filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feDropShadow dx="0" dy="10" stdDeviation="12" flood-opacity=".14"/></filter></defs>${rect(0,0,1200,900,r.wall)}${rect(0,760,1200,140,r.floor)}${rect(0,760,1200,140,'url(#ground)')}<path d="M0 751H1200V760H0Z" fill="#000" opacity=".07"/>${r.kind==='sofa'?'<path d="M40 0H155V750H40Z" fill="#fff" opacity=".15"/>':''}${r.kind==='bench'?'<path d="M160 80H1040V640H160Z" stroke="#000" fill="none" opacity=".045"/>':''}${rect(0,0,1200,900,'url(#light)')}${furniture}<path d="M0 895H1200" stroke="#fff" opacity=".2"/></svg>`;
-}
+function fitWallArt(){if(!activeWork)return;const r=rooms[roomIndex],image=document.querySelector('#wall-art');image.style.width=(activeWork.widthCm/r.widthCm*100)+'%';image.style.height=(activeWork.heightCm/r.heightCm*100)+'%'}
 rooms.forEach((r,i)=>{const b=document.createElement('button');b.className='room-dot';b.setAttribute('aria-label',r.name);b.style.setProperty('--room-color',r.wall);b.onclick=()=>showRoom(i);document.querySelector('#room-dots').append(b)});
-function showRoom(i){roomIndex=(i+rooms.length)%rooms.length;const r=rooms[roomIndex];document.querySelector('#room-background').innerHTML=roomSvg(r);document.querySelector('#room-name').textContent=r.name;document.querySelector('#room-count').textContent=String(roomIndex+1).padStart(2,'0')+' / 10';document.querySelectorAll('.room-dot').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===roomIndex)));}
-function openWall(){if(!activeWork?.widthCm)return;const image=document.querySelector('#wall-art');image.src=activeWork.asset||`assets/work-${activeWork.id}.webp`;image.alt=activeWork.title+' в интерьере';image.style.width=(activeWork.widthCm/400*100)+'%';image.style.height=(activeWork.heightCm/300*100)+'%';image.style.borderRadius=activeWork.round?'50%':'0';document.querySelector('#wall-title').textContent=activeWork.title;document.querySelector('#wall-size').textContent=activeWork.size;showRoom(roomIndex);wallView.showModal()}
+function showRoom(i){roomIndex=(i+rooms.length)%rooms.length;const r=rooms[roomIndex];document.querySelector('#room-background').innerHTML=`<img src="${r.image}" alt="${r.name}, фон интерьера" decoding="async">`;fitWallArt();document.querySelector('#room-name').textContent=r.name;document.querySelector('#room-count').textContent=String(roomIndex+1).padStart(2,'0')+' / 10';document.querySelectorAll('.room-dot').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===roomIndex)));}
+function openWall(){if(!activeWork?.widthCm)return;const image=document.querySelector('#wall-art');image.src=activeWork.asset||`assets/work-${activeWork.id}.webp`;image.alt=activeWork.title+' в интерьере';image.style.borderRadius=activeWork.round?'50%':'0';document.querySelector('#wall-title').textContent=activeWork.title;document.querySelector('#wall-size').textContent=activeWork.size;showRoom(roomIndex);wallView.showModal()}
 function closeWall(){wallView.close();document.querySelector('#on-wall').focus({preventScroll:true})}
 document.querySelector('#on-wall').onclick=openWall;document.querySelector('#wall-close').onclick=closeWall;document.querySelector('#room-prev').onclick=()=>showRoom(roomIndex-1);document.querySelector('#room-next').onclick=()=>showRoom(roomIndex+1);
 wallView.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();showRoom(roomIndex+(e.key==='ArrowRight'?1:-1))}});
