@@ -16,7 +16,7 @@ const detailImage=document.querySelector('#detail-img'),info=document.querySelec
 function camera(from,to,ms){return new Promise(resolve=>{const start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1;const t=Math.max(0,(p-.28)/.72),e=t*t*(3-2*t);dialog.scrollTop=from+(to-from)*e;if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
 function box(r){return {left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'}}
 async function openWork(w,button){
- if(transitioning||dialog.open)return;transitioning=true;activeWork=w;activeButton=button;
+ if(transitioning||dialog.open)return;transitioning=true;activeWork=w;activeButton=button;warmRooms(roomIndex);
  const img=button.querySelector('img');await img.decode().catch(()=>{});
  const vr=viewport.getBoundingClientRect(),r=img.getBoundingClientRect();
  const x=viewport.scrollLeft+r.left+r.width/2-(vr.left+vr.width/2);
@@ -71,17 +71,72 @@ const rooms=[
 {name:'Пудровая гостиная',wall:'#c5a495'},
 {name:'Шоколад и камень',wall:'#58473b'},
 {name:'Мягкий шалфей',wall:'#a5ac98'}
-].map((r,i)=>({...r,image:`assets/interior-wide-${String(i+1).padStart(2,'0')}.webp`,widthCm:600,heightCm:200,ratio:3}));
+].map((r,i)=>({...r,image:`assets/interior-wide-${String(i+1).padStart(2,'0')}-fast.webp`,small:`assets/interior-wide-${String(i+1).padStart(2,'0')}-small.webp`,widthCm:600,heightCm:200,ratio:3}));
 const wallView=document.querySelector('#wall-view'),scene=document.querySelector('#room-scene');let roomIndex=0;
 function fitWallArt(){if(!activeWork)return;const r=rooms[roomIndex],image=document.querySelector('#wall-art');image.style.width=(activeWork.widthCm/r.widthCm*100)+'%';image.style.height=(activeWork.heightCm/r.heightCm*100)+'%'}
-rooms.forEach((r,i)=>{const b=document.createElement('button');b.className='room-dot';b.setAttribute('aria-label',r.name);b.style.setProperty('--room-color',r.wall);b.onclick=()=>showRoom(i);document.querySelector('#room-dots').append(b)});
-function showRoom(i){roomIndex=(i+rooms.length)%rooms.length;const r=rooms[roomIndex];document.querySelector('#room-background').innerHTML=`<img src="${r.image}" alt="${r.name}, фон интерьера" decoding="async">`;const bg=document.querySelector('#room-background img');bg.onload=()=>{r.ratio=bg.naturalWidth/bg.naturalHeight;r.widthCm=r.heightCm*r.ratio;layoutScene();};wallView.dataset.dark=String([0,2,3,5,8].includes(roomIndex));layoutScene();document.querySelector('#room-name').textContent=r.name;document.querySelector('#room-count').textContent=String(roomIndex+1).padStart(2,'0')+' / 10';document.querySelectorAll('.room-dot').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===roomIndex)));}
-function openWall(){if(!activeWork?.widthCm)return;const image=document.querySelector('#wall-art');image.src=activeWork.asset||`assets/work-${activeWork.id}.webp`;image.alt=activeWork.title+' в интерьере';image.style.borderRadius=activeWork.round?'50%':'0';document.querySelector('#wall-title').textContent=activeWork.title;document.querySelector('#wall-size').textContent=activeWork.size;showRoom(roomIndex);wallView.showModal();layoutScene()}
-function closeWall(){wallView.close();document.querySelector('#on-wall').focus({preventScroll:true})}
-document.querySelector('#on-wall').onclick=openWall;document.querySelector('#wall-close').onclick=closeWall;document.querySelector('#room-prev').onclick=()=>showRoom(roomIndex-1);document.querySelector('#room-next').onclick=()=>showRoom(roomIndex+1);
-wallView.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();showRoom(roomIndex+(e.key==='ArrowRight'?1:-1))}});
-let touchStart=null;scene.addEventListener('touchstart',e=>{touchStart=e.changedTouches[0].clientX},{passive:true});scene.addEventListener('touchend',e=>{if(touchStart===null)return;const d=e.changedTouches[0].clientX-touchStart;if(Math.abs(d)>45)showRoom(roomIndex+(d<0?1:-1));touchStart=null},{passive:true});
 
+const roomCache=new Map();let wantedRoom=0,roomTask=null,wallBusy=false;
+const bgHost=document.querySelector('#room-background'),wallArt=document.querySelector('#wall-art');
+const wrapRoom=i=>(i+rooms.length)%rooms.length;
+function loadRoom(i,priority='low'){
+ i=wrapRoom(i);const cached=roomCache.get(i);if(cached){if(priority==='high')cached.image.fetchPriority='high';return cached.promise;}
+ const r=rooms[i],image=new Image();image.decoding='async';image.fetchPriority=priority;
+ const entry={image,promise:null};entry.promise=new Promise((resolve,reject)=>{image.onload=async()=>{try{await image.decode();resolve(image)}catch(error){roomCache.delete(i);reject(error)}};image.onerror=()=>{roomCache.delete(i);reject(new Error('Не удалось загрузить интерьер'))};});
+ roomCache.set(i,entry);
+ if(navigator.connection?.saveData){image.src=r.small;}else{image.srcset=`${r.small} 1280w, ${r.image} 2172w`;image.sizes=Math.ceil(Math.max(innerWidth,(innerHeight-72)*3))+'px';image.src=r.image;}
+ return entry.promise;
+}
+function warmRooms(i){[i,i+1,i-1].forEach(n=>loadRoom(n).catch(()=>{}));}
+function reportRoomError(){const el=document.querySelector('#room-status');el.textContent='Не удалось загрузить интерьер. Попробуйте ещё раз.';}
+const status=document.createElement('span');status.id='room-status';status.setAttribute('role','status');document.querySelector('.room-bottom').append(status);
+function updateRoomLabels(){const r=rooms[roomIndex];wallView.dataset.dark=String([0,2,3,5,8].includes(roomIndex));document.querySelector('#room-name').textContent=r.name;document.querySelector('#room-count').textContent=String(roomIndex+1).padStart(2,'0')+' / 10';document.querySelectorAll('.room-dot').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===roomIndex)));}
+function showRoom(i,animate=true){
+ wantedRoom=wrapRoom(i);if(roomTask)return roomTask;
+ roomTask=(async()=>{while(wantedRoom!==roomIndex||!bgHost.firstElementChild){
+  const target=wantedRoom,loaded=await loadRoom(target,'high');if(target!==wantedRoom)continue;
+  const old=bgHost.lastElementChild,next=loaded.cloneNode();next.alt=rooms[target].name+', фон интерьера';next.removeAttribute('fetchpriority');
+  const delta=(target-roomIndex+rooms.length)%rooms.length,dir=delta>rooms.length/2?-1:1;
+  bgHost.append(next);roomIndex=target;updateRoomLabels();layoutScene();document.querySelector('#room-status').textContent='';
+  if(old&&animate&&!reduced&&wallView.open){
+   const incoming=next.animate([{opacity:0,transform:`translateX(${dir*38}px) scale(1.025)`},{opacity:1,transform:'translateX(0) scale(1)'}],{duration:620,easing:'cubic-bezier(.22,.7,.2,1)'});
+   const outgoing=old.animate([{opacity:1,transform:'translateX(0)'},{opacity:0,transform:`translateX(${-dir*28}px)`}],{duration:620,easing:'ease-in-out'});
+   await Promise.all([incoming.finished,outgoing.finished]);
+  }
+  if(old)old.remove();warmRooms(roomIndex);
+ }})().finally(()=>{roomTask=null;});return roomTask;
+}
+function requestRoom(i){if(wallBusy)return;showRoom(i).catch(reportRoomError);}
+rooms.forEach((r,i)=>{const b=document.createElement('button');b.className='room-dot';b.setAttribute('aria-label',r.name);b.style.setProperty('--room-color',r.wall);b.onclick=()=>requestRoom(i);document.querySelector('#room-dots').append(b)});
+function wallUiFade(enter){const els=wallView.querySelectorAll('.room-window,.wall-toolbar,.room-bottom,.wall-back');return [...els].map(el=>{el.getAnimations().forEach(a=>a.cancel());return el.animate([{opacity:enter?0:1},{opacity:enter?1:0}],{duration:reduced?0:650,easing:'ease',fill:'forwards'})});}
+function flyImage(source,from,to){const clone=source.cloneNode();clone.removeAttribute('id');clone.className='wall-flight';clone.style.visibility='visible';Object.assign(clone.style,box(from));wallView.append(clone);clone.style.transformOrigin='top left';const animation=clone.animate([{transform:'translate(0,0) scale(1,1)'},{transform:`translate(${to.left-from.left}px,${to.top-from.top}px) scale(${to.width/from.width},${to.height/from.height})`}],{duration:reduced?0:780,easing:'cubic-bezier(.22,.75,.2,1)',fill:'forwards'});return {clone,animation};}
+async function openWall(){
+ if(!activeWork?.widthCm||wallBusy||transitioning)return;wallBusy=true;const button=document.querySelector('#on-wall');button.setAttribute('aria-busy','true');
+ try{
+  await showRoom(roomIndex,false);const from=detailImage.getBoundingClientRect();
+  wallArt.src=activeWork.asset||`assets/work-${activeWork.id}.webp`;wallArt.alt=activeWork.title+' в интерьере';wallArt.style.borderRadius=activeWork.round?'50%':'0';await wallArt.decode();
+  document.querySelector('#wall-title').textContent=activeWork.title;document.querySelector('#wall-size').textContent=activeWork.size;
+  updateRoomLabels();wallArt.style.visibility='hidden';wallView.showModal();layoutScene();
+  const to=wallArt.getBoundingClientRect(),flight=flyImage(detailImage,from,to);detailImage.style.visibility='hidden';
+  const fades=wallUiFade(true);await Promise.all([flight.animation.finished,...fades.map(a=>a.finished)]);
+  wallArt.style.visibility='visible';detailImage.style.visibility='visible';flight.clone.remove();warmRooms(roomIndex);document.querySelector('#wall-close').focus({preventScroll:true});
+ }catch(error){if(wallView.open)wallView.close();detailImage.style.visibility='visible';button.textContent='Попробовать просмотр ещё раз';}
+ finally{wallBusy=false;button.removeAttribute('aria-busy');}
+}
+async function closeWall(){
+ if(wallBusy||!wallView.open)return;wallBusy=true;
+ const from=wallArt.getBoundingClientRect(),to=detailImage.getBoundingClientRect(),flight=flyImage(wallArt,from,to);wallArt.style.visibility='hidden';detailImage.style.visibility='hidden';
+ const fades=wallUiFade(false);await Promise.all([flight.animation.finished,...fades.map(a=>a.finished)]);
+ wallView.close();detailImage.style.visibility='visible';wallArt.style.visibility='visible';flight.clone.remove();document.querySelector('#on-wall').focus({preventScroll:true});wallBusy=false;
+}
+document.querySelector('#on-wall').onclick=openWall;
+document.querySelector('#on-wall').addEventListener('pointerenter',()=>warmRooms(roomIndex));
+document.querySelector('#on-wall').addEventListener('focus',()=>warmRooms(roomIndex));
+document.querySelector('#wall-close').onclick=closeWall;
+document.querySelector('#room-prev').onclick=()=>requestRoom(wantedRoom-1);document.querySelector('#room-next').onclick=()=>requestRoom(wantedRoom+1);
+wallView.addEventListener('cancel',e=>{e.preventDefault();closeWall()});
+wallView.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();requestRoom(wantedRoom+(e.key==='ArrowRight'?1:-1))}});
+let touchStart=null;scene.addEventListener('touchstart',e=>{touchStart=e.changedTouches[0].clientX},{passive:true});scene.addEventListener('touchend',e=>{if(touchStart===null)return;const d=e.changedTouches[0].clientX-touchStart;if(Math.abs(d)>45)requestRoom(wantedRoom+(d<0?1:-1));touchStart=null},{passive:true});
 function layoutScene(){if(!wallView.open)return;const box=document.querySelector('.room-window').getBoundingClientRect(),ratio=rooms[roomIndex].ratio;const width=Math.max(box.width,box.height*ratio);scene.style.width=width+'px';scene.style.height=width/ratio+'px';fitWallArt();}
 addEventListener('resize',layoutScene);new ResizeObserver(()=>layoutScene()).observe(document.querySelector('.room-window'));
-document.querySelectorAll('.site-header a').forEach(link=>link.addEventListener('click',async event=>{event.preventDefault();if(transitioning)return;if(wallView.open)closeWall();if(dialog.open)await closeWork();const target=link.getAttribute('href');if(target==='#')window.scrollTo({top:0,behavior:reduced?'instant':'smooth'});else document.querySelector(target).scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});}));
+document.querySelectorAll('.site-header a').forEach(link=>link.addEventListener('click',async event=>{event.preventDefault();if(transitioning||wallBusy)return;if(wallView.open)await closeWall();if(dialog.open)await closeWork();const target=link.getAttribute('href');if(target==='#')window.scrollTo({top:0,behavior:reduced?'instant':'smooth'});else document.querySelector(target).scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});}));
+const warmFirst=()=>loadRoom(0).catch(()=>{});if('requestIdleCallback' in window)requestIdleCallback(warmFirst,{timeout:2500});else setTimeout(warmFirst,1500);
