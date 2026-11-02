@@ -8,37 +8,38 @@ const works=[
 {id:'0756',title:'Круглый маяк',size:'Ø 30 см',round:true}];
 const track=document.querySelector('#track'),viewport=document.querySelector('.viewport'),dialog=document.querySelector('dialog');
 let activeWork=null,activeButton=null,transitioning=false,flight=null;
-const duration=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:650;
+const duration=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:1100;
 function tweenScroll(left,top,ms){return new Promise(resolve=>{const x=viewport.scrollLeft,y=scrollY,start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1,e=1-Math.pow(1-p,3);viewport.scrollTo({left:x+(left-x)*e,behavior:'instant'});window.scrollTo({top:y+(top-y)*e,behavior:'instant'});if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
 works.forEach((work,i)=>{const b=document.createElement('button');b.className='art'+(work.round?' round':'');b.innerHTML=`<span class="label"><h2>${work.title}</h2><span class="size">${work.size}</span></span><img src="assets/work-${work.id}.webp" alt="Картина ${work.title}" loading="lazy">`;b.addEventListener('click',()=>openWork(work,b));track.append(b)});
 const detailImage=document.querySelector('#detail-img'),info=document.querySelector('.purchase-info');
+function camera(from,to,ms){return new Promise(resolve=>{const start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1;const t=Math.max(0,(p-.28)/.72),e=t*t*(3-2*t);dialog.scrollTop=from+(to-from)*e;if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
 function box(r){return {left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'}}
 async function openWork(w,button){
  if(transitioning||dialog.open)return;transitioning=true;activeWork=w;activeButton=button;
  const img=button.querySelector('img');await img.decode().catch(()=>{});
  const vr=viewport.getBoundingClientRect(),r=img.getBoundingClientRect();
  const x=viewport.scrollLeft+r.left+r.width/2-(vr.left+vr.width/2);
- const gallery=document.querySelector('.gallery').getBoundingClientRect();
- const y=(r.top<100||r.bottom>innerHeight-35)?scrollY+gallery.top-100:scrollY;
- await tweenScroll(x,Math.max(0,y),Math.abs(x-viewport.scrollLeft)>3?duration()*.8:0);
+ await tweenScroll(x,scrollY,Math.abs(x-viewport.scrollLeft)>3?450:0);
  const from=img.getBoundingClientRect();
  detailImage.src=img.src;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
  document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
  document.querySelector('#purchase-form').hidden=true;document.querySelector('#purchase-form').reset();document.querySelector('#purchase-status').textContent='';document.querySelector('#buy').hidden=false;document.querySelector('#buy').setAttribute('aria-expanded','false');
- dialog.showModal();dialog.scrollTop=0;document.body.classList.add('detail-open');document.querySelector('main').inert=true;
+ dialog.showModal();dialog.scrollTop=0;document.querySelector('main').inert=true;
  await detailImage.decode().catch(()=>{});
  const to=detailImage.getBoundingClientRect();flight=img.cloneNode();flight.className='flying-painting';Object.assign(flight.style,box(from));flight.style.borderRadius=w.round?'50%':'0';dialog.append(flight);img.style.visibility='hidden';detailImage.style.visibility='hidden';
- const anim=flight.animate([box(from),{...box(from),top:from.top+65+'px',offset:.32},box(to)],{duration:duration(),easing:'cubic-bezier(.22,.7,.2,1)',fill:'forwards'});
- info.animate([{opacity:0,transform:'translateY(24px)'},{opacity:1,transform:'translateY(0)'}],{duration:duration(),delay:duration()*.4,fill:'both'});
- await anim.finished;detailImage.style.visibility='visible';flight.remove();flight=null;transitioning=false;
+ document.body.classList.add('detail-open');
+ const anim=flight.animate([box(from),box(to)],{duration:duration(),easing:'cubic-bezier(.45,0,.25,1)',fill:'forwards'});
+ const follow=camera(0,innerHeight,duration());
+ info.animate([{opacity:0,transform:'translateY(24px)'},{opacity:1,transform:'translateY(0)'}],{duration:duration(),delay:duration()*.65,fill:'both'});
+ await Promise.all([anim.finished,follow]);detailImage.style.visibility='visible';flight.remove();flight=null;transitioning=false;
 }
 async function closeWork(){
  if(transitioning||!dialog.open)return;transitioning=true;
- const img=activeButton.querySelector('img'),from=detailImage.getBoundingClientRect(),to=img.getBoundingClientRect();
+ const img=activeButton.querySelector('img'),rect=detailImage.getBoundingClientRect(),from={left:rect.left,top:rect.top+dialog.scrollTop,width:rect.width,height:rect.height},to=img.getBoundingClientRect();
  flight=detailImage.cloneNode();flight.removeAttribute('id');flight.className='flying-painting';flight.style.visibility='visible';Object.assign(flight.style,box(from));dialog.append(flight);detailImage.style.visibility='hidden';
  info.animate([{opacity:1},{opacity:0}],{duration:duration()*.5,fill:'forwards'});
  document.body.classList.remove('detail-open');
- await flight.animate([box(from),{...box(to),top:to.top+65+'px',offset:.68},box(to)],{duration:duration(),easing:'cubic-bezier(.22,.7,.2,1)',fill:'forwards'}).finished;
+ await Promise.all([flight.animate([box(from),box(to)],{duration:duration(),easing:'cubic-bezier(.45,0,.25,1)',fill:'forwards'}).finished,camera(dialog.scrollTop,0,duration())]);
  img.style.visibility='visible';flight.remove();flight=null;dialog.close();document.querySelector('main').inert=false;activeButton.focus({preventScroll:true});transitioning=false;
 }
 document.querySelector('.close').onclick=closeWork;dialog.addEventListener('cancel',e=>{e.preventDefault();closeWork()});

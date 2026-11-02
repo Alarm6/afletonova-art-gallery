@@ -18,3 +18,10 @@ body:has(#detail[open]){overflow:hidden}
 @media(max-width:700px){.purchase-layout{width:86vw;grid-template-columns:1fr;gap:20px;padding:105px 0 50px}.painting-slot{height:43vh}#detail-img{max-height:43vh;max-width:78vw}.purchase-info{padding-top:0}.purchase-info h2{font-size:30px;margin:12px 0}.purchase-info .eyebrow{display:none}.purchase-info .price{font-size:17px;margin-bottom:15px}.buy-button{margin-top:20px}#detail .close{right:5vw;top:25px}.track{padding-left:44vw;padding-right:44vw}}
 @media(prefers-reduced-motion:reduce){body>main,body>header,body>footer{transition:none}}
 [hidden]{display:none!important}
+/* The artwork moves into a lower scene; the catalogue never moves. */
+body>main,body>header,body>footer{transition:opacity 1.1s ease}
+#detail .purchase-layout{padding-top:calc(100dvh + 145px);min-height:200dvh}
+#detail .flying-painting{position:absolute}
+@media(max-width:700px){#detail .purchase-layout{padding-top:calc(100dvh + 105px)}}
+@media(prefers-reduced-motion:reduce){body>main,body>header,body>footer{transition:none}}
+html{scrollbar-gutter:stable} #detail{scrollbar-gutter:stable}
