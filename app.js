@@ -63,7 +63,9 @@ function update(){
  film.style.opacity=1-smoothStep(p/.95);film.style.visibility=p>=.95?'hidden':'visible';film.style.pointerEvents=p>.55?'none':'auto';introFoot.style.opacity=1-smoothStep(p/.55);introFoot.style.visibility=p>.7?'hidden':'visible';
  gallery.style.opacity=smoothStep((p-.15)/.85);gallery.style.pointerEvents=p>.65?'auto':'none';gallery.inert=p<.55;
 }
-addEventListener('scroll',update,{passive:true});addEventListener('resize',update);update();
+let openingHeight=intro.offsetHeight;
+function resizeOpening(){const nextHeight=intro.offsetHeight;if(scrollY>=openingHeight-2){window.scrollTo({top:Math.max(nextHeight,scrollY+nextHeight-openingHeight),behavior:'instant'})}openingHeight=nextHeight;update()}
+addEventListener('scroll',update,{passive:true});addEventListener('resize',resizeOpening);update();
 function goToGallery(){window.scrollTo({top:intro.offsetHeight,behavior:reduced?'instant':'smooth'})}
 document.querySelectorAll('.hero-logo,.intro-foot a').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();goToGallery()}));
 const video=document.querySelector('video'),play=document.querySelector('#play');if(reduced){video.pause();play.textContent='▶'}play.onclick=()=>{if(video.paused){video.play().catch(()=>{});play.textContent='Ⅱ';play.setAttribute('aria-label','Приостановить видео')}else{video.pause();play.textContent='▶';play.setAttribute('aria-label','Воспроизвести видео')}};
