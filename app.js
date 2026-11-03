@@ -16,7 +16,7 @@ const detailImage=document.querySelector('#detail-img'),info=document.querySelec
 function camera(from,to,ms){return new Promise(resolve=>{const start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1;const t=Math.max(0,(p-.28)/.72),e=t*t*(3-2*t);dialog.scrollTop=from+(to-from)*e;if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
 function box(r){return {left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'}}
 async function openWork(w,button){
- if(transitioning||dialog.open)return;transitioning=true;activeWork=w;activeButton=button;warmRooms(roomIndex);
+ if(gallery.inert||transitioning||dialog.open)return;transitioning=true;activeWork=w;activeButton=button;warmRooms(roomIndex);
  const img=button.querySelector('img');await img.decode().catch(()=>{});
  const vr=viewport.getBoundingClientRect(),r=img.getBoundingClientRect();
  const x=viewport.scrollLeft+r.left+r.width/2-(vr.left+vr.width/2);
@@ -47,29 +47,33 @@ document.querySelector('.close').onclick=closeWork;dialog.addEventListener('canc
 document.querySelector('#buy').onclick=()=>{document.querySelector('#purchase-form').hidden=false;document.querySelector('#buy').hidden=true;document.querySelector('#buy').setAttribute('aria-expanded','true');document.querySelector('[name="name"]').focus({preventScroll:true})};
 document.querySelector('#purchase-form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.currentTarget);const text=`Заявка на картину «${activeWork.title}»\nРазмер: ${activeWork.size}\nИмя: ${f.get('name')}\nПочта: ${f.get('email')}\nКомментарий: ${f.get('comment')}\n\nЧерновик заявки. Не отправлен. Оплата не произведена.`;const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='afletonova-zayavka.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);document.querySelector('#purchase-status').textContent='Заявка сохранена в файл. Она ещё не отправлена.'};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function move(direction){viewport.scrollBy({left:direction*viewport.clientWidth*.65,behavior:reduced?'instant':'smooth'})}
+function move(direction){if(gallery.inert)return;viewport.scrollBy({left:direction*viewport.clientWidth*.65,behavior:reduced?'instant':'smooth'})}
 document.querySelector('#prev').onclick=()=>move(-1);document.querySelector('#next').onclick=()=>move(1);
 viewport.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();move(e.key==='ArrowRight'?1:-1)}});
-viewport.addEventListener('wheel',e=>{if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;const rect=viewport.getBoundingClientRect();if(rect.top>innerHeight*.5||rect.bottom<innerHeight*.25)return;const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1),max=viewport.scrollWidth-viewport.clientWidth;if((d>0&&viewport.scrollLeft<max-2)||(d<0&&viewport.scrollLeft>2)){e.preventDefault();viewport.scrollLeft+=d}},{passive:false});
-viewport.addEventListener('scroll',()=>{const p=viewport.scrollLeft/(viewport.scrollWidth-viewport.clientWidth||1);document.querySelector('#progress').style.width=(15+p*85)+'%';document.querySelector('#count').textContent=String(Math.min(works.length,1+Math.round(p*(works.length-1)))).padStart(2,'0')+' — '+String(works.length).padStart(2,'0')});
+viewport.addEventListener('wheel',e=>{if(gallery.inert)return;if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;const rect=viewport.getBoundingClientRect();if(rect.top>innerHeight*.5||rect.bottom<innerHeight*.25)return;const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1),max=viewport.scrollWidth-viewport.clientWidth;if((d>0&&viewport.scrollLeft<max-2)||(d<0&&viewport.scrollLeft>2)){e.preventDefault();viewport.scrollLeft+=d}},{passive:false});
+viewport.addEventListener('scroll',()=>{const p=viewport.scrollLeft/(viewport.scrollWidth-viewport.clientWidth||1);document.querySelector('#progress').style.width=(15+p*85)+'%'});
 const heroLogo=document.querySelector('.hero-logo'),film=document.querySelector('.film'),intro=document.querySelector('.intro'),gallery=document.querySelector('.gallery'),mainHeader=document.querySelector('body>.site-header'),introFoot=document.querySelector('.intro-foot');
 const smoothStep=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
+let videoRetired=false;
 function update(){
  const p=Math.max(0,Math.min(1,scrollY/intro.offsetHeight)),ease=smoothStep(p),mobile=innerWidth<=700;
+ if(p>=.82)videoRetired=true;else if(p<=.06&&!dialog.open)videoRetired=false;
+ const videoOpacity=videoRetired?0:1-smoothStep(p/.45),galleryReady=p>=.82;
  const target=mainHeader.querySelector('.brand').getBoundingClientRect();
  const startWidth=innerWidth*(mobile?.78:.37),startLeft=innerWidth*.07,startTop=mobile?innerHeight*.19:innerHeight*.42-30;
  heroLogo.style.width=(startWidth+(target.width-startWidth)*ease)+'px';heroLogo.style.left=(startLeft+(target.left-startLeft)*ease)+'px';heroLogo.style.top=(startTop+(target.top-startTop)*ease)+'px';heroLogo.style.transform='none';heroLogo.style.visibility=p>=.999?'hidden':'visible';
- const headerOpacity=smoothStep((p-.28)/.72);mainHeader.style.opacity=headerOpacity;mainHeader.style.visibility=p===0?'hidden':'visible';mainHeader.style.pointerEvents=p>.9?'auto':'none';mainHeader.querySelector('.brand').style.opacity=p>=.999?'1':'0';
- film.style.opacity=1-smoothStep(p/.95);film.style.visibility=p>=.95?'hidden':'visible';film.style.pointerEvents=p>.55?'none':'auto';introFoot.style.opacity=1-smoothStep(p/.55);introFoot.style.visibility=p>.7?'hidden':'visible';
- gallery.style.opacity=smoothStep((p-.15)/.85);gallery.style.pointerEvents=p>.65?'auto':'none';gallery.inert=p<.55;
+ const headerOpacity=smoothStep((p-.28)/.72);mainHeader.style.opacity=headerOpacity;mainHeader.style.visibility=p===0?'hidden':'visible';mainHeader.style.pointerEvents=galleryReady?'auto':'none';mainHeader.querySelector('.brand').style.opacity=p>=.999?'1':'0';
+ film.hidden=videoOpacity<=.001;film.style.opacity=videoOpacity;film.style.visibility=film.hidden?'hidden':'visible';film.style.pointerEvents=!film.hidden&&p<.4?'auto':'none';
+ introFoot.style.opacity=1-smoothStep(p/.4);introFoot.style.visibility=p>=.45?'hidden':'visible';
+ gallery.style.opacity=smoothStep((p-.5)/.32);gallery.style.pointerEvents=galleryReady?'auto':'none';gallery.inert=!galleryReady;
+
 }
 let openingHeight=intro.offsetHeight;
 function resizeOpening(){const nextHeight=intro.offsetHeight;if(scrollY>=openingHeight-2){window.scrollTo({top:Math.max(nextHeight,scrollY+nextHeight-openingHeight),behavior:'instant'})}openingHeight=nextHeight;update()}
 addEventListener('scroll',update,{passive:true});addEventListener('resize',resizeOpening);update();
 function goToGallery(){window.scrollTo({top:intro.offsetHeight,behavior:reduced?'instant':'smooth'})}
 document.querySelectorAll('.hero-logo,.intro-foot a').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();goToGallery()}));
-const video=document.querySelector('video'),play=document.querySelector('#play');if(reduced){video.pause();play.textContent='▶'}play.onclick=()=>{if(video.paused){video.play().catch(()=>{});play.textContent='Ⅱ';play.setAttribute('aria-label','Приостановить видео')}else{video.pause();play.textContent='▶';play.setAttribute('aria-label','Воспроизвести видео')}};
-
+const video=document.querySelector('video');if(reduced)video.pause();
 
 // Generated photographs use a common approximate 2m-wide scene.
 // Real artwork dimensions preserve the relative scale between every painting.
