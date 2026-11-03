@@ -182,7 +182,7 @@ function purchaseTop(){return Math.min(innerHeight,Math.max(0,dialog.scrollHeigh
 function navigateBack(view){backWheelConsumed=true;backWheelDistance=0;if(view===wallView)closeWall();else closeWork()}
 function onBackWheel(event,view){
  if(event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||event.deltaY>=0)return;
- if(event.target.closest('input,textarea,select'))return;
+ if(event.target.closest('input,textarea,select,canvas'))return;
  if(view===dialog&&wallView.open)return;
  const amount=-event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1);
  if(view===dialog&&dialog.scrollTop>purchaseTop()+3){event.preventDefault();dialog.scrollTop=Math.max(purchaseTop(),dialog.scrollTop-amount);backWheelDistance=0;return;}
@@ -192,7 +192,7 @@ function onBackWheel(event,view){
 [dialog,wallView].forEach(view=>{
  view.addEventListener('wheel',event=>onBackWheel(event,view),{passive:false});
  let touch=null;
- view.addEventListener('touchstart',event=>{if(event.touches.length!==1){touch=null;return}const t=event.touches[0];touch={x:t.clientX,y:t.clientY,atTop:view===wallView||dialog.scrollTop<=purchaseTop()+3,field:!!event.target.closest('input,textarea,select')};},{passive:true});
+ view.addEventListener('touchstart',event=>{if(event.touches.length!==1){touch=null;return}const t=event.touches[0];touch={x:t.clientX,y:t.clientY,atTop:view===wallView||dialog.scrollTop<=purchaseTop()+3,field:!!event.target.closest('input,textarea,select,canvas')};},{passive:true});
  view.addEventListener('touchmove',event=>{if(!touch||touch.field||!touch.atTop||event.touches.length!==1)return;const t=event.touches[0],dy=t.clientY-touch.y,dx=t.clientX-touch.x;if(dy>8&&dy>Math.abs(dx)*1.2)event.preventDefault();},{passive:false});
  view.addEventListener('touchend',event=>{if(!touch)return;const t=event.changedTouches[0],dy=t.clientY-touch.y,dx=t.clientX-touch.x;if(touch.atTop&&!touch.field&&dy>65&&dy>Math.abs(dx)*1.25&&!transitioning&&!wallBusy){navigateBack(view)}touch=null;},{passive:true});
 });
