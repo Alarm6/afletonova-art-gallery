@@ -32,3 +32,6 @@ document.querySelector('#purchase-form').onsubmit=e=>{
  const html=`<!doctype html><html lang="ru"><meta charset="utf-8"><title>Заявка Afletonova Art</title><body style="font:16px/1.6 Arial;max-width:700px;margin:50px auto;padding:20px"><h1>${escape(activeWork.title)}</h1><p>${escape(activeWork.size)}</p><p>Имя: ${escape(data.get('name'))}<br>Почта: ${escape(data.get('email'))}</p><p>${escape(data.get('comment'))}</p>${gift}<hr><p>Черновик заявки. Не отправлен. Оплата не произведена. Стоимость картины уточняется отдельно.</p></body></html>`;
  const url=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='afletonova-zayavka.html';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);document.querySelector('#purchase-status').textContent='Заявка с оформлением открытки сохранена. Она ещё не отправлена.';
 };
+
+// Keep the paper fitted when the viewport or artwork size changes.
+new ResizeObserver(()=>{const paper=document.querySelector('.kraft-wrap');if(paper){const r=detailImage.getBoundingClientRect();paper.style.width=r.width+'px';paper.style.height=r.height+'px';}}).observe(detailImage);

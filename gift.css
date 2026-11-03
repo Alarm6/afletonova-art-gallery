@@ -11,3 +11,13 @@
 .gift-panel:not(.gift-enabled) :is(.card-back,.gift-tools,.gift-hint){display:none!important}
 
 @media(min-width:701px){.painting-column.gift-wrapped{position:sticky;top:calc(var(--header-h) + 30px)}}
+
+/* Photographic cellulose texture with shaded overlaps and tactile cotton twine. */
+.kraft-wrap{filter:drop-shadow(1px 3px 2px #48351d22) drop-shadow(0 12px 18px #40301d1f);border-radius:1px}
+.kraft-wrap i{background-image:linear-gradient(115deg,#fff1,transparent 38%,#4d35120d),url('assets/kraft-natural.webp');background-size:100% 100%,580px 580px;background-color:#b89a73;box-shadow:inset 0 0 28px #53381b14}
+.kraft-wrap .kraft-left{background-position:center,0 0}
+.kraft-wrap .kraft-right{background-position:center,180px 30px;background-image:linear-gradient(90deg,transparent 43.7%,#503a282b 44%,#fff4 44.3%,transparent 45%,transparent 98%,#543c2220),url('assets/kraft-natural.webp')}
+.kraft-wrap .kraft-top{background-position:center,35px 100px;background-image:linear-gradient(164deg,#fff1,transparent 42%,#56391b33),url('assets/kraft-natural.webp');filter:drop-shadow(0 1px 1px #4e321c55)}
+.kraft-wrap .kraft-bottom{background-position:center,95px 65px;background-image:linear-gradient(16deg,#624a2922,transparent 50%,#fff3),url('assets/kraft-natural.webp');filter:drop-shadow(0 -1px 1px #4e321c55)}
+.kraft-string{inset:-1px;background:linear-gradient(90deg,transparent calc(50% - 2px),#4b34244d calc(50% - 1.6px),#cdbb94 calc(50% - 1px),#f1e3c3 50%,#b8a47c calc(50% + 1px),#4b342433 calc(50% + 1.7px),transparent calc(50% + 2.5px)),linear-gradient(transparent calc(50% - 2px),#4b34243d calc(50% - 1.6px),#cdbb94 calc(50% - 1px),#f1e3c3 50%,#b8a47c calc(50% + 1px),#4b342433 calc(50% + 1.7px),transparent calc(50% + 2.5px));transform:rotate(-.35deg)}
+.kraft-seal{background:#ece2cb url('assets/kraft-natural.webp') center/350px;background-blend-mode:screen;box-shadow:0 1px 2px #523a2533;border-radius:1px;filter:contrast(.9);padding:11px}
