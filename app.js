@@ -11,7 +11,7 @@ const track=document.querySelector('#track'),viewport=document.querySelector('.v
 let activeWork=null,activeButton=null,transitioning=false,flight=null,edgeShift=0;
 const duration=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:1100;
 function tweenScroll(left,top,ms){return new Promise(resolve=>{const x=viewport.scrollLeft,y=scrollY,start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1,e=1-Math.pow(1-p,3);viewport.scrollTo({left:x+(left-x)*e,behavior:'instant'});window.scrollTo({top:y+(top-y)*e,behavior:'instant'});if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
-works.forEach((work,i)=>{const b=document.createElement('button');b.className='art'+(work.round?' round':'');b.innerHTML=`<span class="label"><h2>${work.title}</h2><span class="size">${work.size}</span></span><img src="${work.asset||`assets/work-${work.id}.webp`}" alt="Картина ${work.title}" width="${work.widthCm}" height="${work.heightCm}" loading="lazy">`;b.addEventListener('click',()=>openWork(work,b));track.append(b)});
+works.forEach((work,i)=>{const b=track.children[i];b.addEventListener('click',()=>openWork(work,b));});
 const detailImage=document.querySelector('#detail-img'),info=document.querySelector('.purchase-info');
 function camera(from,to,ms){return new Promise(resolve=>{const start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1;const t=Math.max(0,(p-.28)/.72),e=t*t*(3-2*t);dialog.scrollTop=from+(to-from)*e;if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
 function box(r){return {left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'}}

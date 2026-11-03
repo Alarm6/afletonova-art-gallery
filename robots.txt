@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://afletonova-art-gallery.augustnek.chatgpt.site/sitemap.xml
