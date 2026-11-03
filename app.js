@@ -47,11 +47,28 @@ document.querySelector('.close').onclick=closeWork;dialog.addEventListener('canc
 document.querySelector('#buy').onclick=()=>{document.querySelector('#purchase-form').hidden=false;document.querySelector('#buy').hidden=true;document.querySelector('#buy').setAttribute('aria-expanded','true');document.querySelector('[name="name"]').focus({preventScroll:true})};
 document.querySelector('#purchase-form').onsubmit=e=>{e.preventDefault();const f=new FormData(e.currentTarget);const text=`Заявка на картину «${activeWork.title}»\nРазмер: ${activeWork.size}\nИмя: ${f.get('name')}\nПочта: ${f.get('email')}\nКомментарий: ${f.get('comment')}\n\nЧерновик заявки. Не отправлен. Оплата не произведена.`;const url=URL.createObjectURL(new Blob([text],{type:'text/plain;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='afletonova-zayavka.txt';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);document.querySelector('#purchase-status').textContent='Заявка сохранена в файл. Она ещё не отправлена.'};
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-function move(direction){if(gallery.inert)return;viewport.scrollBy({left:direction*viewport.clientWidth*.65,behavior:reduced?'instant':'smooth'})}
+// Keep the requested destination during smooth scrolling, so repeated clicks
+// advance from the last request rather than a partially completed animation.
+let galleryTarget=null,galleryFrame=0;
+function galleryStops(){const vr=viewport.getBoundingClientRect(),max=viewport.scrollWidth-viewport.clientWidth;return [0,...[...track.children].map(el=>Math.max(0,Math.min(max,viewport.scrollLeft+el.getBoundingClientRect().left-vr.left-parseFloat(getComputedStyle(track).paddingLeft)))),max].filter((n,i,a)=>i===0||n-a[i-1]>2);}
+function updateGalleryControls(){const max=viewport.scrollWidth-viewport.clientWidth,pos=galleryTarget??viewport.scrollLeft;document.querySelector('#prev').disabled=pos<=2;document.querySelector('#next').disabled=pos>=max-2;}
+function stopGalleryMotion(){cancelAnimationFrame(galleryFrame);galleryFrame=0;galleryTarget=null;updateGalleryControls();}
+function move(direction){
+ if(gallery.inert||transitioning)return;
+ const current=galleryTarget??viewport.scrollLeft,stops=galleryStops(),target=direction>0?stops.find(n=>n>current+2):stops.findLast(n=>n<current-2);
+ if(target===undefined)return;
+ cancelAnimationFrame(galleryFrame);galleryTarget=target;updateGalleryControls();
+ const from=viewport.scrollLeft,start=performance.now(),ms=reduced?0:400;
+ function frame(now){const p=ms?Math.min(1,(now-start)/ms):1;viewport.scrollTo({left:from+(target-from)*(1-Math.pow(1-p,3)),behavior:'instant'});if(p<1)galleryFrame=requestAnimationFrame(frame);else{galleryFrame=0;galleryTarget=null;updateGalleryControls();}}
+ galleryFrame=requestAnimationFrame(frame);
+}
+viewport.addEventListener('pointerdown',stopGalleryMotion,{passive:true});
+viewport.addEventListener('wheel',stopGalleryMotion,{passive:true});
+new ResizeObserver(()=>{stopGalleryMotion();updateGalleryControls()}).observe(viewport);
 document.querySelector('#prev').onclick=()=>move(-1);document.querySelector('#next').onclick=()=>move(1);
 viewport.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();move(e.key==='ArrowRight'?1:-1)}});
 viewport.addEventListener('wheel',e=>{if(gallery.inert)return;if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;const rect=viewport.getBoundingClientRect();if(rect.top>innerHeight*.5||rect.bottom<innerHeight*.25)return;const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1),max=viewport.scrollWidth-viewport.clientWidth;if((d>0&&viewport.scrollLeft<max-2)||(d<0&&viewport.scrollLeft>2)){e.preventDefault();viewport.scrollLeft+=d}},{passive:false});
-viewport.addEventListener('scroll',()=>{const p=viewport.scrollLeft/(viewport.scrollWidth-viewport.clientWidth||1);document.querySelector('#progress').style.width=(15+p*85)+'%'});
+viewport.addEventListener('scroll',()=>{const p=viewport.scrollLeft/(viewport.scrollWidth-viewport.clientWidth||1);document.querySelector('#progress').style.width=(15+p*85)+'%';updateGalleryControls()});
 const heroLogo=document.querySelector('.hero-logo'),film=document.querySelector('.film'),intro=document.querySelector('.intro'),gallery=document.querySelector('.gallery'),mainHeader=document.querySelector('body>.site-header'),introFoot=document.querySelector('.intro-foot');
 const smoothStep=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 let videoRetired=false;
@@ -94,7 +111,7 @@ function fitWallArt(){if(!activeWork)return;const r=rooms[roomIndex],image=docum
 
 const roomCache=new Map();let wantedRoom=0,roomTask=null,wallBusy=false;
 const bgHost=document.querySelector('#room-background'),wallArt=document.querySelector('#wall-art');
-const wrapRoom=i=>(i+rooms.length)%rooms.length;
+const wrapRoom=i=>((i%rooms.length)+rooms.length)%rooms.length;
 function loadRoom(i,priority='low'){
  i=wrapRoom(i);const cached=roomCache.get(i);if(cached){if(priority==='high')cached.image.fetchPriority='high';return cached.promise;}
  const r=rooms[i],image=new Image();image.decoding='async';image.fetchPriority=priority;
