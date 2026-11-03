@@ -8,10 +8,10 @@ const works=[
 {id:'0756',title:'Круглый маяк',size:'Ø 30 см',round:true,widthCm:30,heightCm:30},
 {id:'heron60',title:'Круглая цапля',size:'Ø 60 см',round:true,widthCm:60,heightCm:60,asset:'assets/work-heron60.svg'}];
 const track=document.querySelector('#track'),viewport=document.querySelector('.viewport'),dialog=document.querySelector('dialog');
-let activeWork=null,activeButton=null,transitioning=false,flight=null;
+let activeWork=null,activeButton=null,transitioning=false,flight=null,edgeShift=0;
 const duration=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:1100;
 function tweenScroll(left,top,ms){return new Promise(resolve=>{const x=viewport.scrollLeft,y=scrollY,start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1,e=1-Math.pow(1-p,3);viewport.scrollTo({left:x+(left-x)*e,behavior:'instant'});window.scrollTo({top:y+(top-y)*e,behavior:'instant'});if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
-works.forEach((work,i)=>{const b=document.createElement('button');b.className='art'+(work.round?' round':'');b.innerHTML=`<span class="label"><h2>${work.title}</h2><span class="size">${work.size}</span></span><img src="${work.asset||`assets/work-${work.id}.webp`}" alt="Картина ${work.title}" loading="lazy">`;b.addEventListener('click',()=>openWork(work,b));track.append(b)});
+works.forEach((work,i)=>{const b=document.createElement('button');b.className='art'+(work.round?' round':'');b.innerHTML=`<span class="label"><h2>${work.title}</h2><span class="size">${work.size}</span></span><img src="${work.asset||`assets/work-${work.id}.webp`}" alt="Картина ${work.title}" width="${work.widthCm}" height="${work.heightCm}" loading="lazy">`;b.addEventListener('click',()=>openWork(work,b));track.append(b)});
 const detailImage=document.querySelector('#detail-img'),info=document.querySelector('.purchase-info');
 function camera(from,to,ms){return new Promise(resolve=>{const start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1;const t=Math.max(0,(p-.28)/.72),e=t*t*(3-2*t);dialog.scrollTop=from+(to-from)*e;if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
 function box(r){return {left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'}}
@@ -20,7 +20,7 @@ async function openWork(w,button){
  const img=button.querySelector('img');await img.decode().catch(()=>{});
  const vr=viewport.getBoundingClientRect(),r=img.getBoundingClientRect();
  const x=viewport.scrollLeft+r.left+r.width/2-(vr.left+vr.width/2);
- await tweenScroll(x,scrollY,Math.abs(x-viewport.scrollLeft)>3?450:0);
+ if(x<0&&viewport.scrollLeft<2){edgeShift=-x;track.style.transform=`translateX(${edgeShift}px)`;await track.animate([{transform:'translateX(0)'},{transform:`translateX(${edgeShift}px)`}],{duration:reduced?0:450,easing:'cubic-bezier(.22,.7,.2,1)'}).finished;}else{await tweenScroll(x,scrollY,Math.abs(x-viewport.scrollLeft)>3?450:0);}
  const from=img.getBoundingClientRect();
  detailImage.src=img.src;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
  document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#on-wall').disabled=!(w.widthCm&&w.heightCm);document.querySelector('#on-wall').textContent=w.widthCm?'Посмотреть на стене ↗':'Для просмотра на стене уточняется размер';document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
@@ -41,7 +41,7 @@ async function closeWork(){
  info.animate([{opacity:1},{opacity:0}],{duration:duration()*.5,fill:'forwards'});
  document.body.classList.remove('detail-open');
  await Promise.all([flight.animate([box(from),box(to)],{duration:duration(),easing:'cubic-bezier(.45,0,.25,1)',fill:'forwards'}).finished,camera(dialog.scrollTop,0,duration())]);
- img.style.visibility='visible';flight.remove();flight=null;dialog.close();document.querySelector('main').inert=false;activeButton.focus({preventScroll:true});transitioning=false;
+ img.style.visibility='visible';flight.remove();flight=null;dialog.close();document.querySelector('main').inert=false;activeButton.focus({preventScroll:true});if(edgeShift){const shift=edgeShift;edgeShift=0;track.style.transform='none';await track.animate([{transform:`translateX(${shift}px)`},{transform:'translateX(0)'}],{duration:reduced?0:420,easing:'ease-in-out'}).finished;}transitioning=false;
 }
 document.querySelector('.close').onclick=closeWork;dialog.addEventListener('cancel',e=>{e.preventDefault();closeWork()});
 document.querySelector('#buy').onclick=()=>{document.querySelector('#purchase-form').hidden=false;document.querySelector('#buy').hidden=true;document.querySelector('#buy').setAttribute('aria-expanded','true');document.querySelector('[name="name"]').focus({preventScroll:true})};
@@ -52,9 +52,20 @@ document.querySelector('#prev').onclick=()=>move(-1);document.querySelector('#ne
 viewport.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();move(e.key==='ArrowRight'?1:-1)}});
 viewport.addEventListener('wheel',e=>{if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;const rect=viewport.getBoundingClientRect();if(rect.top>innerHeight*.5||rect.bottom<innerHeight*.25)return;const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1),max=viewport.scrollWidth-viewport.clientWidth;if((d>0&&viewport.scrollLeft<max-2)||(d<0&&viewport.scrollLeft>2)){e.preventDefault();viewport.scrollLeft+=d}},{passive:false});
 viewport.addEventListener('scroll',()=>{const p=viewport.scrollLeft/(viewport.scrollWidth-viewport.clientWidth||1);document.querySelector('#progress').style.width=(15+p*85)+'%';document.querySelector('#count').textContent=String(Math.min(works.length,1+Math.round(p*(works.length-1)))).padStart(2,'0')+' — '+String(works.length).padStart(2,'0')});
-const heroLogo=document.querySelector('.hero-logo'),film=document.querySelector('.film');
-function update(){const p=Math.min(1,Math.max(0,scrollY/(innerHeight*.8)));film.style.opacity=1-p;heroLogo.style.opacity=1-p;heroLogo.style.transform=`translateY(${-p*45}px)`;}
-addEventListener('scroll',update,{passive:true});update();
+const heroLogo=document.querySelector('.hero-logo'),film=document.querySelector('.film'),intro=document.querySelector('.intro'),gallery=document.querySelector('.gallery'),mainHeader=document.querySelector('body>.site-header'),introFoot=document.querySelector('.intro-foot');
+const smoothStep=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
+function update(){
+ const p=Math.max(0,Math.min(1,scrollY/intro.offsetHeight)),ease=smoothStep(p),mobile=innerWidth<=700;
+ const target=mainHeader.querySelector('.brand').getBoundingClientRect();
+ const startWidth=innerWidth*(mobile?.78:.37),startLeft=innerWidth*.07,startTop=mobile?innerHeight*.19:innerHeight*.42-30;
+ heroLogo.style.width=(startWidth+(target.width-startWidth)*ease)+'px';heroLogo.style.left=(startLeft+(target.left-startLeft)*ease)+'px';heroLogo.style.top=(startTop+(target.top-startTop)*ease)+'px';heroLogo.style.transform='none';heroLogo.style.visibility=p>=.999?'hidden':'visible';
+ const headerOpacity=smoothStep((p-.28)/.72);mainHeader.style.opacity=headerOpacity;mainHeader.style.visibility=p===0?'hidden':'visible';mainHeader.style.pointerEvents=p>.9?'auto':'none';mainHeader.querySelector('.brand').style.opacity=p>=.999?'1':'0';
+ film.style.opacity=1-smoothStep(p/.95);film.style.visibility=p>=1?'hidden':'visible';introFoot.style.opacity=1-smoothStep(p/.55);introFoot.style.visibility=p>.7?'hidden':'visible';
+ gallery.style.opacity=smoothStep((p-.15)/.85);gallery.style.pointerEvents=p>.65?'auto':'none';gallery.inert=p<.55;
+}
+addEventListener('scroll',update,{passive:true});addEventListener('resize',update);update();
+function goToGallery(){window.scrollTo({top:intro.offsetHeight,behavior:reduced?'instant':'smooth'})}
+document.querySelectorAll('.hero-logo,.intro-foot a').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();goToGallery()}));
 const video=document.querySelector('video'),play=document.querySelector('#play');if(reduced){video.pause();play.textContent='▶'}play.onclick=()=>{if(video.paused){video.play().catch(()=>{});play.textContent='Ⅱ';play.setAttribute('aria-label','Приостановить видео')}else{video.pause();play.textContent='▶';play.setAttribute('aria-label','Воспроизвести видео')}};
 
 
@@ -135,8 +146,31 @@ document.querySelector('#wall-close').onclick=closeWall;
 document.querySelector('#room-prev').onclick=()=>requestRoom(wantedRoom-1);document.querySelector('#room-next').onclick=()=>requestRoom(wantedRoom+1);
 wallView.addEventListener('cancel',e=>{e.preventDefault();closeWall()});
 wallView.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();requestRoom(wantedRoom+(e.key==='ArrowRight'?1:-1))}});
-let touchStart=null;scene.addEventListener('touchstart',e=>{touchStart=e.changedTouches[0].clientX},{passive:true});scene.addEventListener('touchend',e=>{if(touchStart===null)return;const d=e.changedTouches[0].clientX-touchStart;if(Math.abs(d)>45)requestRoom(wantedRoom+(d<0?1:-1));touchStart=null},{passive:true});
+let touchStart=null,touchStartY=0;scene.addEventListener('touchstart',e=>{touchStart=e.changedTouches[0].clientX;touchStartY=e.changedTouches[0].clientY},{passive:true});scene.addEventListener('touchend',e=>{if(touchStart===null)return;const d=e.changedTouches[0].clientX-touchStart;if(Math.abs(d)>45&&Math.abs(d)>Math.abs(e.changedTouches[0].clientY-(touchStartY||0))*1.2)requestRoom(wantedRoom+(d<0?1:-1));touchStart=null},{passive:true});
 function layoutScene(){if(!wallView.open)return;const box=document.querySelector('.room-window').getBoundingClientRect(),ratio=rooms[roomIndex].ratio;const width=Math.max(box.width,box.height*ratio);scene.style.width=width+'px';scene.style.height=width/ratio+'px';fitWallArt();}
 addEventListener('resize',layoutScene);new ResizeObserver(()=>layoutScene()).observe(document.querySelector('.room-window'));
-document.querySelectorAll('.site-header a').forEach(link=>link.addEventListener('click',async event=>{event.preventDefault();if(transitioning||wallBusy)return;if(wallView.open)await closeWall();if(dialog.open)await closeWork();const target=link.getAttribute('href');if(target==='#')window.scrollTo({top:0,behavior:reduced?'instant':'smooth'});else document.querySelector(target).scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});}));
+document.querySelectorAll('.site-header a').forEach(link=>link.addEventListener('click',async event=>{event.preventDefault();if(transitioning||wallBusy)return;if(wallView.open)await closeWall();if(dialog.open)await closeWork();const target=link.getAttribute('href');if(target==='#')window.scrollTo({top:0,behavior:reduced?'instant':'smooth'});else if(target==='#works')goToGallery();else document.querySelector(target).scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});}));
 const warmFirst=()=>loadRoom(0).catch(()=>{});if('requestIdleCallback' in window)requestIdleCallback(warmFirst,{timeout:2500});else setTimeout(warmFirst,1500);
+
+// Scroll or swipe up returns one level, retaining the reverse artwork animation.
+let lastBackWheel=0,backWheelConsumed=false,backWheelDistance=0;
+window.addEventListener('wheel',event=>{if(event.ctrlKey)return;const now=performance.now();if(now-lastBackWheel>230){backWheelConsumed=false;backWheelDistance=0}lastBackWheel=now;if(backWheelConsumed&&event.deltaY<0&&!dialog.open&&!wallView.open)event.preventDefault();},{capture:true,passive:false});
+function purchaseTop(){return Math.min(innerHeight,Math.max(0,dialog.scrollHeight-dialog.clientHeight))}
+function navigateBack(view){backWheelConsumed=true;backWheelDistance=0;if(view===wallView)closeWall();else closeWork()}
+function onBackWheel(event,view){
+ if(event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||event.deltaY>=0)return;
+ if(event.target.closest('input,textarea,select'))return;
+ if(view===dialog&&wallView.open)return;
+ const amount=-event.deltaY*(event.deltaMode===1?16:event.deltaMode===2?innerHeight:1);
+ if(view===dialog&&dialog.scrollTop>purchaseTop()+3){event.preventDefault();dialog.scrollTop=Math.max(purchaseTop(),dialog.scrollTop-amount);backWheelDistance=0;return;}
+ event.preventDefault();if(transitioning||wallBusy||backWheelConsumed)return;
+ backWheelDistance+=amount;if(backWheelDistance>=55)navigateBack(view);
+}
+[dialog,wallView].forEach(view=>{
+ view.addEventListener('wheel',event=>onBackWheel(event,view),{passive:false});
+ let touch=null;
+ view.addEventListener('touchstart',event=>{if(event.touches.length!==1){touch=null;return}const t=event.touches[0];touch={x:t.clientX,y:t.clientY,atTop:view===wallView||dialog.scrollTop<=purchaseTop()+3,field:!!event.target.closest('input,textarea,select')};},{passive:true});
+ view.addEventListener('touchmove',event=>{if(!touch||touch.field||!touch.atTop||event.touches.length!==1)return;const t=event.touches[0],dy=t.clientY-touch.y,dx=t.clientX-touch.x;if(dy>8&&dy>Math.abs(dx)*1.2)event.preventDefault();},{passive:false});
+ view.addEventListener('touchend',event=>{if(!touch)return;const t=event.changedTouches[0],dy=t.clientY-touch.y,dx=t.clientX-touch.x;if(touch.atTop&&!touch.field&&dy>65&&dy>Math.abs(dx)*1.25&&!transitioning&&!wallBusy){navigateBack(view)}touch=null;},{passive:true});
+});
+dialog.addEventListener('scroll',()=>{if(dialog.open&&!wallView.open&&!transitioning&&dialog.scrollTop<purchaseTop()-1)dialog.scrollTop=purchaseTop();},{passive:true});
