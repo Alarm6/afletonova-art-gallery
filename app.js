@@ -60,7 +60,7 @@ function update(){
  const startWidth=innerWidth*(mobile?.78:.37),startLeft=innerWidth*.07,startTop=mobile?innerHeight*.19:innerHeight*.42-30;
  heroLogo.style.width=(startWidth+(target.width-startWidth)*ease)+'px';heroLogo.style.left=(startLeft+(target.left-startLeft)*ease)+'px';heroLogo.style.top=(startTop+(target.top-startTop)*ease)+'px';heroLogo.style.transform='none';heroLogo.style.visibility=p>=.999?'hidden':'visible';
  const headerOpacity=smoothStep((p-.28)/.72);mainHeader.style.opacity=headerOpacity;mainHeader.style.visibility=p===0?'hidden':'visible';mainHeader.style.pointerEvents=p>.9?'auto':'none';mainHeader.querySelector('.brand').style.opacity=p>=.999?'1':'0';
- film.style.opacity=1-smoothStep(p/.95);film.style.visibility=p>=1?'hidden':'visible';introFoot.style.opacity=1-smoothStep(p/.55);introFoot.style.visibility=p>.7?'hidden':'visible';
+ film.style.opacity=1-smoothStep(p/.95);film.style.visibility=p>=.95?'hidden':'visible';film.style.pointerEvents=p>.55?'none':'auto';introFoot.style.opacity=1-smoothStep(p/.55);introFoot.style.visibility=p>.7?'hidden':'visible';
  gallery.style.opacity=smoothStep((p-.15)/.85);gallery.style.pointerEvents=p>.65?'auto':'none';gallery.inert=p<.55;
 }
 addEventListener('scroll',update,{passive:true});addEventListener('resize',update);update();
