@@ -23,7 +23,7 @@ async function openWork(w,button){
  if(x<0&&viewport.scrollLeft<2){edgeShift=-x;track.style.transform=`translateX(${edgeShift}px)`;await track.animate([{transform:'translateX(0)'},{transform:`translateX(${edgeShift}px)`}],{duration:reduced?0:450,easing:'cubic-bezier(.22,.7,.2,1)'}).finished;}else{await tweenScroll(x,scrollY,Math.abs(x-viewport.scrollLeft)>3?450:0);}
  const from=img.getBoundingClientRect();
  detailImage.src=img.src;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
- document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#on-wall').disabled=!(w.widthCm&&w.heightCm);document.querySelector('#on-wall').textContent=w.widthCm?'Посмотреть на стене ↗':'Для просмотра на стене уточняется размер';document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
+ document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#on-wall').disabled=!(w.widthCm&&w.heightCm);document.querySelector('#on-wall').textContent=w.widthCm?'Посмотреть на стене':'Для просмотра на стене уточняется размер';document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
  document.querySelector('#purchase-form').hidden=true;document.querySelector('#purchase-form').reset();document.querySelector('#purchase-status').textContent='';document.querySelector('#buy').hidden=false;document.querySelector('#buy').setAttribute('aria-expanded','false');
  dialog.showModal();dialog.scrollTop=0;document.querySelector('main').inert=true;
  await detailImage.decode().catch(()=>{});
@@ -124,7 +124,7 @@ function showRoom(i,animate=true){
 }
 function requestRoom(i){if(wallBusy)return;showRoom(i).catch(reportRoomError);}
 rooms.forEach((r,i)=>{const b=document.createElement('button');b.className='room-dot';b.setAttribute('aria-label',r.name);b.style.setProperty('--room-color',r.wall);b.onclick=()=>requestRoom(i);document.querySelector('#room-dots').append(b)});
-function wallUiFade(enter){const els=wallView.querySelectorAll('.room-window,.wall-toolbar,.room-bottom,.wall-back');return [...els].map(el=>{el.getAnimations().forEach(a=>a.cancel());return el.animate([{opacity:enter?0:1},{opacity:enter?1:0}],{duration:reduced?0:650,easing:'ease',fill:'forwards'})});}
+function wallUiFade(enter){const els=wallView.querySelectorAll('.room-window,.wall-toolbar,.room-bottom');return [...els].map(el=>{el.getAnimations().forEach(a=>a.cancel());return el.animate([{opacity:enter?0:1},{opacity:enter?1:0}],{duration:reduced?0:650,easing:'ease',fill:'forwards'})});}
 function flyImage(source,from,to){const clone=source.cloneNode();clone.removeAttribute('id');clone.className='wall-flight';clone.style.visibility='visible';Object.assign(clone.style,box(from));wallView.append(clone);clone.style.transformOrigin='top left';const animation=clone.animate([{transform:'translate(0,0) scale(1,1)'},{transform:`translate(${to.left-from.left}px,${to.top-from.top}px) scale(${to.width/from.width},${to.height/from.height})`}],{duration:reduced?0:780,easing:'cubic-bezier(.22,.75,.2,1)',fill:'forwards'});return {clone,animation};}
 async function openWall(){
  if(!activeWork?.widthCm||wallBusy||transitioning)return;wallBusy=true;const button=document.querySelector('#on-wall');button.setAttribute('aria-busy','true');
