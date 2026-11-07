@@ -6,7 +6,8 @@ const works=[
 {id:'0748',title:'Лодка',size:'100 × 50 см',widthCm:50,heightCm:100},
 {id:'0750',title:'Цапля',size:'80 × 50 см',widthCm:50,heightCm:80},
 {id:'0756',title:'Круглый маяк',size:'Ø 30 см',round:true,widthCm:30,heightCm:30},
-{id:'heron60',title:'Круглая цапля',size:'Ø 60 см',round:true,widthCm:60,heightCm:60,asset:'assets/work-heron60.svg'}];
+{id:'heron60',title:'Круглая цапля',size:'Ø 60 см',round:true,widthCm:60,heightCm:60,asset:'assets/work-heron60.webp'},
+{id:'white-horse',title:'Белый конь',size:'60 × 40 см',widthCm:40,heightCm:60}];
 const track=document.querySelector('#track'),viewport=document.querySelector('.viewport'),dialog=document.querySelector('dialog');
 let activeWork=null,activeButton=null,transitioning=false,flight=null,edgeShift=0;
 const duration=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:1100;
@@ -22,7 +23,7 @@ async function openWork(w,button){
  const x=viewport.scrollLeft+r.left+r.width/2-(vr.left+vr.width/2);
  if(x<0&&viewport.scrollLeft<2){edgeShift=-x;track.style.transform=`translateX(${edgeShift}px)`;await track.animate([{transform:'translateX(0)'},{transform:`translateX(${edgeShift}px)`}],{duration:reduced?0:450,easing:'cubic-bezier(.22,.7,.2,1)'}).finished;}else{await tweenScroll(x,scrollY,Math.abs(x-viewport.scrollLeft)>3?450:0);}
  const from=img.getBoundingClientRect();
- detailImage.src=img.src;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
+ detailImage.src=w.asset||`assets/work-${w.id}.webp`;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
  document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#on-wall').disabled=!(w.widthCm&&w.heightCm);document.querySelector('#on-wall').textContent=w.widthCm?'Посмотреть на стене':'Для просмотра на стене уточняется размер';document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
  document.querySelector('#purchase-form').hidden=true;document.querySelector('#purchase-form').reset();document.querySelector('#purchase-status').textContent='';document.querySelector('#buy').hidden=false;document.querySelector('#buy').setAttribute('aria-expanded','false');
  dialog.showModal();dialog.scrollTop=0;document.querySelector('main').inert=true;
@@ -80,7 +81,8 @@ function update(){
  const startWidth=innerWidth*(mobile?.78:.37),startLeft=innerWidth*.07,startTop=mobile?innerHeight*.19:innerHeight*.42-30;
  heroLogo.style.width=(startWidth+(target.width-startWidth)*ease)+'px';heroLogo.style.left=(startLeft+(target.left-startLeft)*ease)+'px';heroLogo.style.top=(startTop+(target.top-startTop)*ease)+'px';heroLogo.style.transform='none';heroLogo.style.visibility=p>=.999?'hidden':'visible';
  const headerOpacity=smoothStep((p-.28)/.72);mainHeader.style.opacity=headerOpacity;mainHeader.style.visibility=p===0?'hidden':'visible';mainHeader.style.pointerEvents=galleryReady?'auto':'none';mainHeader.querySelector('.brand').style.opacity=p>=.999?'1':'0';
- film.hidden=videoOpacity<=.001;film.style.opacity=videoOpacity;film.style.visibility=film.hidden?'hidden':'visible';film.style.pointerEvents=!film.hidden&&p<.4?'auto':'none';
+ const hideFilm=videoOpacity<=.001;
+ if(film.hidden!==hideFilm)film.hidden=hideFilm;film.style.opacity=videoOpacity;film.style.visibility=film.hidden?'hidden':'visible';film.style.pointerEvents=!film.hidden&&p<.4?'auto':'none';
  introFoot.style.opacity=1-smoothStep(p/.4);introFoot.style.visibility=p>=.45?'hidden':'visible';
  gallery.style.opacity=smoothStep((p-.5)/.32);gallery.style.pointerEvents=galleryReady?'auto':'none';gallery.inert=!galleryReady;
 
@@ -90,7 +92,15 @@ function resizeOpening(){const nextHeight=intro.offsetHeight;if(scrollY>=opening
 addEventListener('scroll',update,{passive:true});addEventListener('resize',resizeOpening);update();
 function goToGallery(){window.scrollTo({top:intro.offsetHeight,behavior:reduced?'instant':'smooth'})}
 document.querySelectorAll('.hero-logo,.intro-foot a').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();goToGallery()}));
-const video=document.querySelector('video');if(reduced)video.pause();
+const video=document.querySelector('video');
+function syncStudioVideo() {
+ const shouldPlay = !reduced && !film.hidden && !document.hidden;
+ if (shouldPlay && video.paused) video.play().catch(()=>{});
+ if (!shouldPlay && !video.paused) video.pause();
+}
+new MutationObserver(syncStudioVideo).observe(film,{attributes:true,attributeFilter:['hidden']});
+document.addEventListener('visibilitychange',syncStudioVideo);
+syncStudioVideo();
 
 // Generated photographs use a common approximate 2m-wide scene.
 // Real artwork dimensions preserve the relative scale between every painting.
