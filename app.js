@@ -31,9 +31,9 @@ async function openWork(w,button){
  const to=detailImage.getBoundingClientRect();flight=img.cloneNode();flight.className='flying-painting';Object.assign(flight.style,box(from));flight.style.borderRadius=w.round?'50%':'0';dialog.append(flight);img.style.visibility='hidden';detailImage.style.visibility='hidden';
  document.body.classList.add('detail-open');
  const anim=flight.animate([box(from),box(to)],{duration:duration(),easing:'cubic-bezier(.45,0,.25,1)',fill:'forwards'});
- const follow=camera(0,innerHeight,duration());
+ const follow=camera(0,purchaseTop(),duration());
  info.animate([{opacity:0,transform:'translateY(24px)'},{opacity:1,transform:'translateY(0)'}],{duration:duration(),delay:duration()*.65,fill:'both'});
- await Promise.all([anim.finished,follow]);detailImage.style.visibility='visible';flight.remove();flight=null;transitioning=false;
+ await Promise.all([anim.finished,follow]);dialog.scrollTop=purchaseTop();detailImage.style.visibility='visible';flight.remove();flight=null;transitioning=false;
 }
 async function closeWork(){
  if(transitioning||!dialog.open)return;transitioning=true;
@@ -89,7 +89,13 @@ function update(){
 }
 let openingHeight=intro.offsetHeight;
 function resizeOpening(){const nextHeight=intro.offsetHeight;if(scrollY>=openingHeight-2){window.scrollTo({top:Math.max(nextHeight,scrollY+nextHeight-openingHeight),behavior:'instant'})}openingHeight=nextHeight;update()}
-addEventListener('scroll',update,{passive:true});addEventListener('resize',resizeOpening);update();
+addEventListener('scroll',update,{passive:true});addEventListener('resize',resizeOpening);
+addEventListener('resize',()=>{
+ if(dialog.open && !transitioning && !document.querySelector('#buy').hidden){
+  dialog.scrollTop=purchaseTop();
+ }
+});
+update();
 function goToGallery(){window.scrollTo({top:intro.offsetHeight,behavior:reduced?'instant':'smooth'})}
 document.querySelectorAll('.hero-logo,.intro-foot a').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();goToGallery()}));
 const video=document.querySelector('video');
@@ -188,7 +194,7 @@ const warmFirst=()=>loadRoom(0).catch(()=>{});if('requestIdleCallback' in window
 // Scroll or swipe up returns one level, retaining the reverse artwork animation.
 let lastBackWheel=0,backWheelConsumed=false,backWheelDistance=0;
 window.addEventListener('wheel',event=>{if(event.ctrlKey)return;const now=performance.now();if(now-lastBackWheel>230){backWheelConsumed=false;backWheelDistance=0}lastBackWheel=now;if(backWheelConsumed&&event.deltaY<0&&!dialog.open&&!wallView.open)event.preventDefault();},{capture:true,passive:false});
-function purchaseTop(){return Math.min(innerHeight,Math.max(0,dialog.scrollHeight-dialog.clientHeight))}
+function purchaseTop(){return Math.min(dialog.clientHeight,Math.max(0,dialog.scrollHeight-dialog.clientHeight))}
 function navigateBack(view){backWheelConsumed=true;backWheelDistance=0;if(view===wallView)closeWall();else closeWork()}
 function onBackWheel(event,view){
  if(event.ctrlKey||Math.abs(event.deltaX)>Math.abs(event.deltaY)||event.deltaY>=0)return;

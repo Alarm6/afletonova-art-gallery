@@ -135,3 +135,44 @@ button:not(.art):disabled{opacity:.35!important;cursor:default!important}
 @media(max-width:700px){
  #detail .close{top:calc((var(--header-h) - 40px)/2);z-index:31}
 }
+
+/* The artwork preview occupies one viewport after the transition runway. */
+#detail:has(#buy:not([hidden])) {
+ overflow-y:hidden;
+ scrollbar-gutter:auto;
+}
+#detail:has(#buy:not([hidden])) .purchase-layout {
+ height:200dvh;
+ padding-top:calc(100dvh + var(--header-h) + 16px);
+ padding-bottom:16px;
+ grid-template-rows:minmax(0,1fr);
+ align-items:center;
+ gap:clamp(16px,4vw,65px);
+}
+#detail:has(#buy:not([hidden])) .painting-column {
+ display:grid;
+ grid-template-rows:minmax(0,1fr) auto;
+ align-self:stretch;
+ min-height:0;
+}
+#detail:has(#buy:not([hidden])) .painting-slot {height:auto;min-height:0}
+#detail:has(#buy:not([hidden])) #detail-img {max-height:100%}
+#detail:has(#buy:not([hidden])) .on-wall {margin-top:8px}
+#detail:has(#buy:not([hidden])) .purchase-info h2 {margin:8px 0}
+#detail:has(#buy:not([hidden])) .purchase-info .price {margin-bottom:10px}
+@media(max-width:700px){
+ #detail:has(#buy:not([hidden])) .purchase-layout {
+  padding-bottom:calc(66px + env(safe-area-inset-bottom));
+  grid-template-rows:minmax(0,1fr) auto;
+  gap:10px;
+ }
+ #detail:has(#buy:not([hidden])) .purchase-info>p {margin:5px 0}
+ #detail:has(#buy:not([hidden])) .purchase-info h2 {font-size:clamp(20px,4dvh,30px)}
+ #detail:has(#buy:not([hidden])) #buy {margin-top:6px}
+}
+@media(max-width:700px) and (orientation:landscape){
+ #detail:has(#buy:not([hidden])) .purchase-layout {
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);
+ }
+}
