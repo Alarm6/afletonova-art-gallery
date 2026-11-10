@@ -53,7 +53,6 @@ async function openWork(w,button){
  activeWork=w;
  activeButton=button;
  stopGalleryMotion();
- warmRooms(roomIndex);
  detailImage.src=w.asset||`assets/work-${w.id}.webp`;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
  document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#on-wall').disabled=!(w.widthCm&&w.heightCm);document.querySelector('#on-wall').textContent=w.widthCm?'Посмотреть на стене':'Для просмотра на стене уточняется размер';document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
  document.querySelector('#purchase-form').hidden=true;document.querySelector('#purchase-form').reset();document.querySelector('#purchase-status').textContent='';document.querySelector('#buy').hidden=false;document.querySelector('#buy').setAttribute('aria-expanded','false');
@@ -138,7 +137,8 @@ function goToGallery(){window.scrollTo({top:intro.offsetHeight,behavior:reduced?
 document.querySelectorAll('.hero-logo,.intro-foot a').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();goToGallery()}));
 const video=document.querySelector('video');
 function syncStudioVideo() {
- const shouldPlay = !reduced && !film.hidden && !document.hidden;
+ const shouldPlay = !reduced && !navigator.connection?.saveData && !film.hidden && !document.hidden;
+ if (shouldPlay && !video.hasAttribute('src')) video.src=video.dataset.src;
  if (shouldPlay && video.paused) video.play().catch(()=>{});
  if (!shouldPlay && !video.paused) video.pause();
 }
@@ -180,11 +180,11 @@ function loadRoom(i,priority='low'){
  const r=rooms[i],image=new Image();image.decoding='async';image.fetchPriority=priority;
  const entry={image,promise:null};entry.promise=new Promise((resolve,reject)=>{image.onload=async()=>{try{await image.decode();resolve(image)}catch(error){roomCache.delete(i);reject(error)}};image.onerror=()=>{roomCache.delete(i);reject(new Error('Не удалось загрузить интерьер'))};});
  roomCache.set(i,entry);
- if(navigator.connection?.saveData){image.src=r.small;}else{image.srcset=`${r.small} 1280w, ${r.image} 2172w`;image.sizes=Math.ceil(Math.max(innerWidth,(innerHeight-72)*3))+'px';image.src=r.image;}
+ if(navigator.connection?.saveData){image.src=r.small;}else{image.sizes=Math.ceil(Math.max(innerWidth,innerHeight*3))+'px';image.srcset=`${r.small} 1280w, ${r.image} 2172w`;image.src=r.image;}
  return entry.promise;
 }
-function warmRooms(i){[i,i+1,i-1].forEach(n=>loadRoom(n).catch(()=>{}));}
-function reportRoomError(){const el=document.querySelector('#room-status');el.textContent='Не удалось загрузить интерьер. Попробуйте ещё раз.';}
+function warmRooms(i){(navigator.connection?.saveData?[i]:[i,i+1,i-1]).forEach(n=>loadRoom(n).catch(()=>{}));}
+function reportRoomError(){wantedRoom=roomIndex;const el=document.querySelector('#room-status');el.textContent='Не удалось загрузить интерьер. Попробуйте ещё раз.';}
 const status=document.createElement('span');status.id='room-status';status.setAttribute('role','status');document.querySelector('.room-bottom').append(status);
 function updateRoomLabels(){const r=rooms[roomIndex];wallView.dataset.dark=String([0,2,3,5,8].includes(roomIndex));document.querySelector('#room-name').textContent=r.name;document.querySelector('#room-count').textContent=String(roomIndex+1).padStart(2,'0')+' / 10';document.querySelectorAll('.room-dot').forEach((b,i)=>b.setAttribute('aria-pressed',String(i===roomIndex)));}
 function showRoom(i,animate=true){
@@ -199,7 +199,7 @@ function showRoom(i,animate=true){
    const outgoing=old.animate([{opacity:1,transform:'translateX(0)'},{opacity:0,transform:`translateX(${-dir*28}px)`}],{duration:620,easing:'ease-in-out'});
    await Promise.all([incoming.finished,outgoing.finished]);
   }
-  if(old)old.remove();warmRooms(roomIndex);
+  if(old)old.remove();if(wallView.open)warmRooms(roomIndex);
  }})().finally(()=>{roomTask=null;});return roomTask;
 }
 function requestRoom(i){if(wallBusy)return;showRoom(i).catch(reportRoomError);}
@@ -208,8 +208,9 @@ function wallUiFade(enter){const els=wallView.querySelectorAll('.room-window,.wa
 async function openWall(){
  if(!activeWork?.widthCm||wallBusy||transitioning)return;wallBusy=true;const button=document.querySelector('#on-wall');button.setAttribute('aria-busy','true');
  try{
-  await showRoom(roomIndex,false);
-  wallArt.src=activeWork.asset||`assets/work-${activeWork.id}.webp`;wallArt.alt=activeWork.title+' в интерьере';wallArt.style.borderRadius=activeWork.round?'50%':'0';await wallArt.decode();
+  const background=showRoom(roomIndex,false);
+  wallArt.src=activeWork.asset||`assets/work-${activeWork.id}.webp`;wallArt.alt=activeWork.title+' в интерьере';wallArt.style.borderRadius=activeWork.round?'50%':'0';await Promise.all([background,wallArt.decode()]);
+  button.textContent='Посмотреть на стене';
   document.querySelector('#wall-title').textContent=activeWork.title;document.querySelector('#wall-size').textContent=activeWork.size;
   wallRotate.hidden=activeWork.id!=='0748';
   wallRotate.setAttribute('aria-pressed','false');
@@ -246,9 +247,9 @@ wallView.addEventListener('cancel',e=>{e.preventDefault();closeWall()});
 wallView.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();requestRoom(wantedRoom+(e.key==='ArrowRight'?1:-1))}});
 let touchStart=null,touchStartY=0;scene.addEventListener('touchstart',e=>{touchStart=e.changedTouches[0].clientX;touchStartY=e.changedTouches[0].clientY},{passive:true});scene.addEventListener('touchend',e=>{if(touchStart===null)return;const d=e.changedTouches[0].clientX-touchStart;if(Math.abs(d)>45&&Math.abs(d)>Math.abs(e.changedTouches[0].clientY-(touchStartY||0))*1.2)requestRoom(wantedRoom+(d<0?1:-1));touchStart=null},{passive:true});
 function layoutScene(){if(!wallView.open)return;const box=document.querySelector('.room-window').getBoundingClientRect(),ratio=rooms[roomIndex].ratio;const width=Math.max(box.width,box.height*ratio);scene.style.width=width+'px';scene.style.height=width/ratio+'px';fitWallArt();}
-addEventListener('resize',layoutScene);new ResizeObserver(()=>layoutScene()).observe(document.querySelector('.room-window'));
+new ResizeObserver(layoutScene).observe(document.querySelector('.room-window'));
 document.querySelectorAll('.site-header a').forEach(link=>link.addEventListener('click',async event=>{event.preventDefault();if(transitioning||wallBusy)return;if(wallView.open)await closeWall();if(dialog.open)await closeWork();const target=link.getAttribute('href');if(target==='#')window.scrollTo({top:0,behavior:reduced?'instant':'smooth'});else if(target==='#works')goToGallery();else document.querySelector(target).scrollIntoView({behavior:reduced?'instant':'smooth',block:'start'});}));
-const warmFirst=()=>loadRoom(0).catch(()=>{});if('requestIdleCallback' in window)requestIdleCallback(warmFirst,{timeout:2500});else setTimeout(warmFirst,1500);
+
 
 // Scroll or swipe up returns one level, retaining the reverse artwork animation.
 let lastBackWheel=0,backWheelConsumed=false,backWheelDistance=0;
@@ -269,6 +270,7 @@ function onBackWheel(event,view){
  let touch=null;
  view.addEventListener('touchstart',event=>{if(event.touches.length!==1){touch=null;return}const t=event.touches[0];touch={x:t.clientX,y:t.clientY,atTop:view===wallView||dialog.scrollTop<=purchaseTop()+3,field:!!event.target.closest('input,textarea,select,canvas')};},{passive:true});
  view.addEventListener('touchmove',event=>{if(!touch||touch.field||!touch.atTop||event.touches.length!==1)return;const t=event.touches[0],dy=t.clientY-touch.y,dx=t.clientX-touch.x;if(dy>8&&dy>Math.abs(dx)*1.2)event.preventDefault();},{passive:false});
+ view.addEventListener('touchcancel',()=>{touch=null;},{passive:true});
  view.addEventListener('touchend',event=>{if(!touch)return;const t=event.changedTouches[0],dy=t.clientY-touch.y,dx=t.clientX-touch.x;if(touch.atTop&&!touch.field&&dy>65&&dy>Math.abs(dx)*1.25&&!transitioning&&!wallBusy){navigateBack(view)}touch=null;},{passive:true});
 });
 dialog.addEventListener('scroll',()=>{if(dialog.open&&!wallView.open&&!transitioning&&dialog.scrollTop<purchaseTop()-1)dialog.scrollTop=purchaseTop();},{passive:true});

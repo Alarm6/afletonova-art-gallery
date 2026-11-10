@@ -257,3 +257,14 @@ button:not(.art):disabled{opacity:.35!important;cursor:default!important}
  #detail button:not(.art),
  #wall-view button:not(.room-dot) { height:28px!important;min-height:28px!important; }
 }
+
+/* Keep arrow hit areas comfortable without enlarging their icons. */
+@media (pointer:coarse) {
+ .gallery-bottom button,#wall-view .room-window>button {
+  width:44px!important;min-width:44px!important;height:44px!important;min-height:44px!important;
+ }
+}
+#detail :is(input,textarea) { scroll-margin-block:var(--header-h) 16px; }
+@media(max-width:700px) {
+ #detail :is(input,textarea) { font-size:16px; }
+}

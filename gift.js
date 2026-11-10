@@ -19,19 +19,24 @@ giftPanel.innerHTML=`<div class="gift-heading"><span class="eyebrow">ПОДАР�
 </div>`;
 document.querySelector('#buy').after(giftPanel);
 const giftAdd=document.querySelector('#gift-add'),giftMessage=document.querySelector('#gift-message'),giftCanvas=document.querySelector('#gift-canvas'),giftContext=giftCanvas.getContext('2d');
-let giftDrawing=false,giftPoint=null;
+let giftDrawing=false,giftPoint=null,penId=null;
 const giftTo=document.querySelector('#gift-to'),giftFrom=document.querySelector('#gift-from');
 giftAdd.onchange=()=>giftPanel.classList.toggle('gift-enabled',giftAdd.checked);
 function clearDrawing(){
  giftContext.clearRect(0,0,giftCanvas.width,giftCanvas.height);
  giftDrawing=false;
  giftPoint=null;
+ penId=null;
 }
 document.querySelector('#gift-clear').onclick=clearDrawing;
 function penPoint(e){const r=giftCanvas.getBoundingClientRect();return {x:(e.clientX-r.left)*giftCanvas.width/r.width,y:(e.clientY-r.top)*giftCanvas.height/r.height};}
-giftCanvas.onpointerdown=e=>{if(e.button!==0)return;e.preventDefault();giftCanvas.setPointerCapture(e.pointerId);giftPoint=penPoint(e);giftDrawing=true;giftContext.fillStyle='#292f42';giftContext.beginPath();giftContext.arc(giftPoint.x,giftPoint.y,2,0,Math.PI*2);giftContext.fill();};
-giftCanvas.onpointermove=e=>{if(!giftPoint)return;for(const sample of e.getCoalescedEvents?.().length?e.getCoalescedEvents():[e]){const p=penPoint(sample);giftContext.strokeStyle='#292f42';giftContext.lineWidth=3.5;giftContext.lineCap='round';giftContext.lineJoin='round';giftContext.beginPath();giftContext.moveTo(giftPoint.x,giftPoint.y);giftContext.lineTo(p.x,p.y);giftContext.stroke();giftPoint=p;}};
-giftCanvas.onpointerup=giftCanvas.onpointercancel=()=>giftPoint=null;
+giftCanvas.onpointerdown=e=>{if(e.button!==0||penId!==null)return;penId=e.pointerId;e.preventDefault();giftCanvas.setPointerCapture(e.pointerId);giftPoint=penPoint(e);giftDrawing=true;giftContext.fillStyle='#292f42';giftContext.beginPath();giftContext.arc(giftPoint.x,giftPoint.y,2,0,Math.PI*2);giftContext.fill();};
+giftCanvas.onpointermove=e=>{if(!giftPoint||e.pointerId!==penId)return;for(const sample of e.getCoalescedEvents?.().length?e.getCoalescedEvents():[e]){const p=penPoint(sample);giftContext.strokeStyle='#292f42';giftContext.lineWidth=3.5;giftContext.lineCap='round';giftContext.lineJoin='round';giftContext.beginPath();giftContext.moveTo(giftPoint.x,giftPoint.y);giftContext.lineTo(p.x,p.y);giftContext.stroke();giftPoint=p;}};
+giftCanvas.onpointerup=giftCanvas.onpointercancel=giftCanvas.onlostpointercapture=e=>{
+ if(e.pointerId!==penId)return;
+ giftPoint=null;
+ penId=null;
+};
 function resetGift(){giftPanel.hidden=true;dialog.classList.remove('gift-order');giftAdd.checked=false;giftPanel.classList.remove('gift-enabled');giftTo.value='';giftFrom.value='';giftMessage.value='';clearDrawing();document.querySelector('.painting-column').classList.remove('gift-wrapped');document.querySelector('.kraft-wrap')?.remove();document.querySelector('#on-wall').hidden=false;}
 const originalOpenWork=openWork;openWork=async function(w,b){if(!gallery.inert&&!transitioning&&!dialog.open)resetGift();return originalOpenWork(w,b);};
 document.querySelector('#buy').onclick=async()=>{

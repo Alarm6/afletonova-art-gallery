@@ -86,3 +86,9 @@
  width:30%;left:35%;top:48%;padding:6px;
  background:#fdfcf8;box-shadow:0 2px 3px #3b322944;
 }
+
+@media(max-width:480px) {
+ .gift-card .card-back { grid-template-columns:minmax(0,1fr);gap:16px; }
+ .postcard-drawing { padding-right:0; }
+ .postcard-address { grid-row:1;border-left:0;border-bottom:1px solid #ddd;padding:0 0 8px; }
+}
