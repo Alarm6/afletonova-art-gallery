@@ -221,7 +221,7 @@ button:not(.art):disabled{opacity:.35!important;cursor:default!important}
 #wall-rotate { display:block;margin-top:8px;pointer-events:auto; }
 #wall-rotate[hidden] { display:none; }
 #wall-art { transition:transform .28s ease; }
-#wall-art.is-landscape { transform:translate(-50%,-50%) rotate(90deg); }
+#wall-art.is-landscape { transform:translate(-50%,-50%) rotate(90deg) scale(var(--landscape-scale,1)); }
 @media(max-width:700px) {
  #detail .close { right:18px; }
  .gallery { padding-bottom:62px; }

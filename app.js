@@ -126,7 +126,16 @@ const rooms=[
 {name:'Мягкий шалфей',wall:'#a5ac98'}
 ].map((r,i)=>({...r,image:`assets/interior-wide-${String(i+1).padStart(2,'0')}-fast.webp`,small:`assets/interior-wide-${String(i+1).padStart(2,'0')}-small.webp`,widthCm:600,heightCm:200,ratio:3}));
 const wallView=document.querySelector('#wall-view'),scene=document.querySelector('#room-scene');let roomIndex=0;
-function fitWallArt(){if(!activeWork)return;const r=rooms[roomIndex],image=document.querySelector('#wall-art');image.style.width=(activeWork.widthCm/r.widthCm*100)+'%';image.style.height=(activeWork.heightCm/r.heightCm*100)+'%'}
+function fitWallArt(){
+ if(!activeWork)return;
+ const room=rooms[roomIndex];
+ const image=document.querySelector('#wall-art');
+ image.style.width=(activeWork.widthCm/room.widthCm*100)+'%';
+ image.style.height=(activeWork.heightCm/room.heightCm*100)+'%';
+ const availableWidth=wallView.clientWidth-32;
+ const landscapeWidth=scene.clientHeight*activeWork.heightCm/room.heightCm;
+ image.style.setProperty('--landscape-scale',String(Math.min(1,availableWidth/landscapeWidth)));
+}
 
 const roomCache=new Map();let wantedRoom=0,roomTask=null,wallBusy=false;
 const bgHost=document.querySelector('#room-background'),wallArt=document.querySelector('#wall-art');
