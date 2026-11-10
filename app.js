@@ -9,40 +9,43 @@ const works=[
 {id:'heron60',title:'Круглая цапля',size:'Ø 60 см',round:true,widthCm:60,heightCm:60,asset:'assets/work-heron60.webp'},
 {id:'white-horse',title:'Белый конь',size:'60 × 40 см',widthCm:40,heightCm:60}];
 const track=document.querySelector('#track'),viewport=document.querySelector('.viewport'),dialog=document.querySelector('dialog');
-let activeWork=null,activeButton=null,transitioning=false,flight=null,edgeShift=0;
-const duration=()=>matchMedia('(prefers-reduced-motion: reduce)').matches?0:1100;
-function tweenScroll(left,top,ms){return new Promise(resolve=>{const x=viewport.scrollLeft,y=scrollY,start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1,e=1-Math.pow(1-p,3);viewport.scrollTo({left:x+(left-x)*e,behavior:'instant'});window.scrollTo({top:y+(top-y)*e,behavior:'instant'});if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
+let activeWork=null,activeButton=null,transitioning=false;
 works.forEach((work,i)=>{const b=track.children[i];b.addEventListener('click',()=>openWork(work,b));});
 const detailImage=document.querySelector('#detail-img'),info=document.querySelector('.purchase-info');
-function camera(from,to,ms){return new Promise(resolve=>{const start=performance.now();function frame(now){const p=ms?Math.min(1,(now-start)/ms):1;const t=Math.max(0,(p-.28)/.72),e=t*t*(3-2*t);dialog.scrollTop=from+(to-from)*e;if(p<1)requestAnimationFrame(frame);else resolve()}requestAnimationFrame(frame)})}
-function box(r){return {left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'}}
 async function openWork(w,button){
- if(gallery.inert||transitioning||dialog.open)return;transitioning=true;activeWork=w;activeButton=button;warmRooms(roomIndex);
- const img=button.querySelector('img');await img.decode().catch(()=>{});
- const vr=viewport.getBoundingClientRect(),r=img.getBoundingClientRect();
- const x=viewport.scrollLeft+r.left+r.width/2-(vr.left+vr.width/2);
- if(x<0&&viewport.scrollLeft<2){edgeShift=-x;track.style.transform=`translateX(${edgeShift}px)`;await track.animate([{transform:'translateX(0)'},{transform:`translateX(${edgeShift}px)`}],{duration:reduced?0:450,easing:'cubic-bezier(.22,.7,.2,1)'}).finished;}else{await tweenScroll(x,scrollY,Math.abs(x-viewport.scrollLeft)>3?450:0);}
- const from=img.getBoundingClientRect();
+ if(gallery.inert||transitioning||dialog.open)return;
+ transitioning=true;
+ activeWork=w;
+ activeButton=button;
+ stopGalleryMotion();
+ warmRooms(roomIndex);
  detailImage.src=w.asset||`assets/work-${w.id}.webp`;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
  document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#on-wall').disabled=!(w.widthCm&&w.heightCm);document.querySelector('#on-wall').textContent=w.widthCm?'Посмотреть на стене':'Для просмотра на стене уточняется размер';document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
  document.querySelector('#purchase-form').hidden=true;document.querySelector('#purchase-form').reset();document.querySelector('#purchase-status').textContent='';document.querySelector('#buy').hidden=false;document.querySelector('#buy').setAttribute('aria-expanded','false');
- dialog.showModal();dialog.scrollTop=0;document.querySelector('main').inert=true;
  await detailImage.decode().catch(()=>{});
- const to=detailImage.getBoundingClientRect();flight=img.cloneNode();flight.className='flying-painting';Object.assign(flight.style,box(from));flight.style.borderRadius=w.round?'50%':'0';dialog.append(flight);img.style.visibility='hidden';detailImage.style.visibility='hidden';
+ dialog.showModal();
+ dialog.scrollTop=purchaseTop();
+ document.querySelector('main').inert=true;
  document.body.classList.add('detail-open');
- const anim=flight.animate([box(from),box(to)],{duration:duration(),easing:'cubic-bezier(.45,0,.25,1)',fill:'forwards'});
- const follow=camera(0,purchaseTop(),duration());
- info.animate([{opacity:0,transform:'translateY(24px)'},{opacity:1,transform:'translateY(0)'}],{duration:duration(),delay:duration()*.65,fill:'both'});
- await Promise.all([anim.finished,follow]);dialog.scrollTop=purchaseTop();detailImage.style.visibility='visible';flight.remove();flight=null;transitioning=false;
+ if(!reduced){
+  const picture=detailImage.animate([
+   {opacity:0,transform:'translate(-10px, 8px) scale(.94)'},
+   {opacity:1,transform:'none'}
+  ],{duration:360,easing:'cubic-bezier(.2,.7,.2,1)'});
+  const caption=info.animate([{opacity:0},{opacity:1}],{duration:260});
+  await Promise.all([picture.finished,caption.finished]);
+ }
+ transitioning=false;
 }
 async function closeWork(){
- if(transitioning||!dialog.open)return;transitioning=true;
- const img=activeButton.querySelector('img'),rect=detailImage.getBoundingClientRect(),from={left:rect.left,top:rect.top+dialog.scrollTop,width:rect.width,height:rect.height},to=img.getBoundingClientRect();
- flight=detailImage.cloneNode();flight.removeAttribute('id');flight.className='flying-painting';flight.style.visibility='visible';Object.assign(flight.style,box(from));dialog.append(flight);detailImage.style.visibility='hidden';
- info.animate([{opacity:1},{opacity:0}],{duration:duration()*.5,fill:'forwards'});
+ if(transitioning||!dialog.open)return;
+ transitioning=true;
  document.body.classList.remove('detail-open');
- await Promise.all([flight.animate([box(from),box(to)],{duration:duration(),easing:'cubic-bezier(.45,0,.25,1)',fill:'forwards'}).finished,camera(dialog.scrollTop,0,duration())]);
- img.style.visibility='visible';flight.remove();flight=null;dialog.close();document.querySelector('main').inert=false;activeButton.focus({preventScroll:true});if(edgeShift){const shift=edgeShift;edgeShift=0;track.style.transform='none';await track.animate([{transform:`translateX(${shift}px)`},{transform:'translateX(0)'}],{duration:reduced?0:420,easing:'ease-in-out'}).finished;}transitioning=false;
+ if(!reduced)await dialog.animate([{opacity:1},{opacity:0}],{duration:180}).finished;
+ dialog.close();
+ document.querySelector('main').inert=false;
+ activeButton.focus({preventScroll:true});
+ transitioning=false;
 }
 document.querySelector('.close').onclick=closeWork;dialog.addEventListener('cancel',e=>{e.preventDefault();closeWork()});
 document.querySelector('#buy').onclick=()=>{document.querySelector('#purchase-form').hidden=false;document.querySelector('#buy').hidden=true;document.querySelector('#buy').setAttribute('aria-expanded','true');document.querySelector('[name="name"]').focus({preventScroll:true})};
@@ -69,7 +72,7 @@ new ResizeObserver(()=>{stopGalleryMotion();updateGalleryControls()}).observe(vi
 document.querySelector('#prev').onclick=()=>move(-1);document.querySelector('#next').onclick=()=>move(1);
 viewport.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();move(e.key==='ArrowRight'?1:-1)}});
 viewport.addEventListener('wheel',e=>{if(gallery.inert)return;if(e.ctrlKey||Math.abs(e.deltaX)>Math.abs(e.deltaY))return;const rect=viewport.getBoundingClientRect();if(rect.top>innerHeight*.5||rect.bottom<innerHeight*.25)return;const d=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?innerHeight:1),max=viewport.scrollWidth-viewport.clientWidth;if((d>0&&viewport.scrollLeft<max-2)||(d<0&&viewport.scrollLeft>2)){e.preventDefault();viewport.scrollLeft+=d}},{passive:false});
-viewport.addEventListener('scroll',()=>{const p=viewport.scrollLeft/(viewport.scrollWidth-viewport.clientWidth||1);document.querySelector('#progress').style.width=(15+p*85)+'%';updateGalleryControls()});
+viewport.addEventListener('scroll',updateGalleryControls,{passive:true});
 const heroLogo=document.querySelector('.hero-logo'),film=document.querySelector('.film'),intro=document.querySelector('.intro'),gallery=document.querySelector('.gallery'),mainHeader=document.querySelector('body>.site-header'),introFoot=document.querySelector('.intro-foot');
 const smoothStep=x=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x)};
 let videoRetired=false;
@@ -158,26 +161,38 @@ function showRoom(i,animate=true){
 function requestRoom(i){if(wallBusy)return;showRoom(i).catch(reportRoomError);}
 rooms.forEach((r,i)=>{const b=document.createElement('button');b.className='room-dot';b.setAttribute('aria-label',r.name);b.style.setProperty('--room-color',r.wall);b.onclick=()=>requestRoom(i);document.querySelector('#room-dots').append(b)});
 function wallUiFade(enter){const els=wallView.querySelectorAll('.room-window,.wall-toolbar,.room-bottom');return [...els].map(el=>{el.getAnimations().forEach(a=>a.cancel());return el.animate([{opacity:enter?0:1},{opacity:enter?1:0}],{duration:reduced?0:650,easing:'ease',fill:'forwards'})});}
-function flyImage(source,from,to){const clone=source.cloneNode();clone.removeAttribute('id');clone.className='wall-flight';clone.style.visibility='visible';Object.assign(clone.style,box(from));wallView.append(clone);clone.style.transformOrigin='top left';const animation=clone.animate([{transform:'translate(0,0) scale(1,1)'},{transform:`translate(${to.left-from.left}px,${to.top-from.top}px) scale(${to.width/from.width},${to.height/from.height})`}],{duration:reduced?0:780,easing:'cubic-bezier(.22,.75,.2,1)',fill:'forwards'});return {clone,animation};}
 async function openWall(){
  if(!activeWork?.widthCm||wallBusy||transitioning)return;wallBusy=true;const button=document.querySelector('#on-wall');button.setAttribute('aria-busy','true');
  try{
-  await showRoom(roomIndex,false);const from=detailImage.getBoundingClientRect();
+  await showRoom(roomIndex,false);
   wallArt.src=activeWork.asset||`assets/work-${activeWork.id}.webp`;wallArt.alt=activeWork.title+' в интерьере';wallArt.style.borderRadius=activeWork.round?'50%':'0';await wallArt.decode();
   document.querySelector('#wall-title').textContent=activeWork.title;document.querySelector('#wall-size').textContent=activeWork.size;
-  updateRoomLabels();wallArt.style.visibility='hidden';wallView.showModal();layoutScene();
-  const to=wallArt.getBoundingClientRect(),flight=flyImage(detailImage,from,to);detailImage.style.visibility='hidden';
-  const fades=wallUiFade(true);await Promise.all([flight.animation.finished,...fades.map(a=>a.finished)]);
-  wallArt.style.visibility='visible';detailImage.style.visibility='visible';flight.clone.remove();warmRooms(roomIndex);document.querySelector('#wall-close').focus({preventScroll:true});
+  wallRotate.hidden=activeWork.id!=='0748';
+  wallRotate.setAttribute('aria-pressed','false');
+  wallArt.classList.remove('is-landscape');
+  updateRoomLabels();
+  wallView.showModal();
+  layoutScene();
+  await Promise.all(wallUiFade(true).map(animation=>animation.finished));
+  warmRooms(roomIndex);
+  document.querySelector('#wall-close').focus({preventScroll:true});
  }catch(error){if(wallView.open)wallView.close();detailImage.style.visibility='visible';button.textContent='Попробовать просмотр ещё раз';}
  finally{wallBusy=false;button.removeAttribute('aria-busy');}
 }
 async function closeWall(){
  if(wallBusy||!wallView.open)return;wallBusy=true;
- const from=wallArt.getBoundingClientRect(),to=detailImage.getBoundingClientRect(),flight=flyImage(wallArt,from,to);wallArt.style.visibility='hidden';detailImage.style.visibility='hidden';
- const fades=wallUiFade(false);await Promise.all([flight.animation.finished,...fades.map(a=>a.finished)]);
- wallView.close();detailImage.style.visibility='visible';wallArt.style.visibility='visible';flight.clone.remove();document.querySelector('#on-wall').focus({preventScroll:true});wallBusy=false;
+ await Promise.all(wallUiFade(false).map(animation=>animation.finished));
+ wallView.close();
+ document.querySelector('#on-wall').focus({preventScroll:true});
+ wallBusy=false;
 }
+const wallRotate=document.querySelector('#wall-rotate');
+wallRotate.onclick=()=>{
+ const landscape=wallRotate.getAttribute('aria-pressed')!=='true';
+ wallRotate.setAttribute('aria-pressed',String(landscape));
+ wallArt.classList.toggle('is-landscape',landscape);
+ document.querySelector('#wall-size').textContent=landscape?'50 × 100 см':activeWork.size;
+};
 document.querySelector('#on-wall').onclick=openWall;
 document.querySelector('#on-wall').addEventListener('pointerenter',()=>warmRooms(roomIndex));
 document.querySelector('#on-wall').addEventListener('focus',()=>warmRooms(roomIndex));

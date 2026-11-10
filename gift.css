@@ -21,3 +21,39 @@
 .kraft-wrap .kraft-bottom{background-position:center,95px 65px;background-image:linear-gradient(16deg,#624a2922,transparent 50%,#fff3),url('assets/kraft-natural.webp');filter:drop-shadow(0 -1px 1px #4e321c55)}
 .kraft-string{inset:-1px;background:linear-gradient(90deg,transparent calc(50% - 2px),#4b34244d calc(50% - 1.6px),#cdbb94 calc(50% - 1px),#f1e3c3 50%,#b8a47c calc(50% + 1px),#4b342433 calc(50% + 1.7px),transparent calc(50% + 2.5px)),linear-gradient(transparent calc(50% - 2px),#4b34243d calc(50% - 1.6px),#cdbb94 calc(50% - 1px),#f1e3c3 50%,#b8a47c calc(50% + 1px),#4b342433 calc(50% + 1.7px),transparent calc(50% + 2.5px));transform:rotate(-.35deg)}
 .kraft-seal{background:#ece2cb url('assets/kraft-natural.webp') center/350px;background-blend-mode:screen;box-shadow:0 1px 2px #523a2533;border-radius:1px;filter:contrast(.9);padding:11px}
+
+/* White postal stationery and pale folded paper on a dark order stage. */
+#detail.gift-order { background:#111;color:#f7f7f7; }
+.gift-order .gift-heading p,
+.gift-order .purchase-info .price,
+.gift-order .small { color:#c7c7c7; }
+.gift-order #purchase-form input,
+.gift-order #purchase-form textarea { color:#fff;border-color:#777; }
+.gift-order #purchase-form button { border-color:#777!important; }
+.gift-order .gift-choice { accent-color:#fff; }
+.gift-card { background:#fff;color:#151515;border:0;border-radius:3px;box-shadow:0 16px 42px #0005; }
+.gift-card .card-front { height:auto;min-height:64px;border-color:#dedede;padding:16px; }
+.gift-card .card-front span { color:#222; }
+.gift-card .card-back { display:grid;grid-template-columns:1fr 1fr;gap:0;padding:16px; }
+.postcard-drawing { padding-right:12px;min-width:0; }
+.postcard-address { border-left:1px solid #999;padding-left:12px;min-width:0; }
+.postcard-address label { display:block;font-size:11px;margin-bottom:9px; }
+.postcard-address input,
+#gift-message {
+ width:100%;padding:4px 0;color:#111;background:#fff;border:0;border-bottom:1px dotted #777;
+}
+#gift-message { height:auto;min-height:76px;resize:vertical;font-size:18px!important; }
+#gift-canvas { width:100%;height:auto;aspect-ratio:1000/760;background:#f7f7f7;border:1px solid #e6e6e6; }
+#detail #gift-clear { font-size:10px!important;padding-inline:6px!important;margin-top:8px;white-space:normal; }
+.kraft-wrap { filter:drop-shadow(0 16px 24px #0009); }
+.kraft-wrap i {
+ background-color:#f2f0e9;
+ background-blend-mode:normal,screen;
+ filter:grayscale(.85) brightness(1.08);
+ box-shadow:inset 0 0 24px #62615a18;
+}
+.kraft-string {
+ background:linear-gradient(90deg,transparent 49.65%,#a5a19a 49.85%,#f9f9f8 50%,transparent 50.35%),
+ linear-gradient(0deg,transparent 49.65%,#a5a19a 49.85%,#f9f9f8 50%,transparent 50.35%);
+}
+.kraft-seal { background:#fff;filter:none;box-shadow:0 1px 3px #0003; }

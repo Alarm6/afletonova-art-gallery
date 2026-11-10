@@ -176,3 +176,57 @@ button:not(.art):disabled{opacity:.35!important;cursor:default!important}
   grid-template-rows:minmax(0,1fr);
  }
 }
+
+/* Compact monochrome controls for the catalog, artwork and room preview. */
+:root { --header-h:44px; --control-height:32px; }
+.site-header nav a[href],
+#detail .close,
+#detail button:not(.art),
+#wall-view button:not(.room-dot),
+.gallery-bottom button,
+.intro-foot a {
+ min-height:32px!important;
+ height:32px!important;
+ border:1px solid transparent!important;
+ border-radius:8px!important;
+ background:#111!important;
+ color:#fff!important;
+ box-shadow:none!important;
+ font-size:12px!important;
+}
+.site-header nav a[href] { padding-inline:13px!important;min-width:0; }
+.gallery-bottom button,
+#wall-view .room-window>button { width:32px!important;min-width:32px!important; }
+.site-header nav a[href]:hover,
+#detail button:hover,
+#wall-view button:not(.room-dot):hover,
+.gallery-bottom button:hover { background:#353535!important; }
+.site-header .brand { width:100px; }
+#detail .close { top:6px;right:calc(3vw + 91px);z-index:31; }
+.gallery {
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ padding-top:calc(var(--header-h) + 12px);
+ padding-bottom:12px;
+}
+.gallery-bottom { justify-content:flex-end;margin:10px 8vw 0 4vw;gap:8px; }
+.art img { max-height:min(58svh,calc(100svh - 150px),500px); }
+#wall-view .wall-toolbar { top:calc(var(--header-h) + 10px); }
+#wall-view .room-bottom { gap:10px;padding-top:24px;padding-bottom:12px; }
+#wall-view .wall-back { min-width:0; }
+#wall-view .room-dot { width:20px;height:20px;flex-basis:20px;background:#111!important;border-color:#fff5!important;border-radius:6px!important; }
+#wall-view .room-dot::after { inset:4px; }
+#wall-view .room-dot[aria-pressed=true] { outline-offset:2px; }
+#wall-rotate { display:block;margin-top:8px;pointer-events:auto; }
+#wall-rotate[hidden] { display:none; }
+#wall-art { transition:transform .28s ease; }
+#wall-art.is-landscape { transform:translate(-50%,-50%) rotate(90deg); }
+@media(max-width:700px) {
+ #detail .close { right:18px; }
+ .gallery { padding-bottom:62px; }
+ .art img { max-height:min(49svh,calc(100svh - 178px)); }
+ #wall-view .room-bottom { padding-bottom:calc(62px + env(safe-area-inset-bottom)); }
+ #wall-view .room-dot { width:18px;height:18px;flex-basis:18px; }
+}
+@media(prefers-reduced-motion:reduce) { #wall-art { transition:none; } }
