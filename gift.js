@@ -58,7 +58,14 @@ document.querySelector('#buy').onclick=async()=>{
  paper.className='kraft-wrap';
  paper.style.width=bounds.width+'px';
  paper.style.height=bounds.height+'px';
- paper.innerHTML='<i class="kraft-left"></i><i class="kraft-right"></i><i class="kraft-top"></i><i class="kraft-bottom"></i><span class="kraft-string"></span><img class="kraft-seal" src="assets/logo-black.svg" alt="Afletonova Art">';
+ paper.innerHTML=`
+  <i class="kraft-left"></i><i class="kraft-right"></i>
+  <i class="kraft-top"></i><i class="kraft-bottom"></i>
+  <svg class="kraft-creases" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+   <path d="M0 0 L49 26 L100 0 M0 100 L54 76 L100 100" vector-effect="non-scaling-stroke"/>
+  </svg>
+  <span class="kraft-string" aria-hidden="true"></span>
+  <img class="kraft-seal" src="assets/logo-black.svg" alt="Afletonova Art">`;
  slot.append(paper);
  if(!reduced)await Promise.all(paper.getAnimations({subtree:true}).map(a=>a.finished.catch(()=>{})));
  giftPanel.hidden=false;document.querySelector('#purchase-form').hidden=false;
