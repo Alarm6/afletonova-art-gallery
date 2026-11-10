@@ -3,7 +3,7 @@ const giftPanel=document.createElement('section');
 giftPanel.className='gift-panel';giftPanel.hidden=true;
 giftPanel.innerHTML=`<div class="gift-heading"><span class="eyebrow">ПОДАРОК С ЛИЧНОЙ ИСТОРИЕЙ</span><h3>Искусство дарить</h3><p>Художница сама нарисует открытку к вашему подарку.</p></div><label class="gift-choice"><input id="gift-add" type="checkbox" name="gift-card" form="purchase-form"><span>Добавить открытку</span><strong>+ 600 ₽</strong></label><div class="gift-editor">
  <div class="gift-card">
-  <div class="card-front"><img src="assets/logo-black.svg" alt="Afletonova Art"><span>Почтовая открытка</span></div>
+  <div class="card-front"><img src="assets/logo-black.svg" alt="Afletonova Art"></div>
   <div class="card-back">
    <div class="postcard-drawing">
     <canvas id="gift-canvas" width="1000" height="760" aria-label="Поле для рисунка"></canvas>

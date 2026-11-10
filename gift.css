@@ -27,7 +27,7 @@
 .gift-card .card-back { display:grid;grid-template-columns:1fr 1fr;gap:0;padding:16px; }
 .postcard-drawing { padding-right:12px;min-width:0; }
 .postcard-address { border-left:1px solid #999;padding-left:12px;min-width:0; }
-.postcard-address label { display:block;font-size:11px;margin-bottom:9px; }
+.postcard-address label { display:block;font-size:10px;margin-bottom:6px; }
 .postcard-address input,
 #gift-message {
  width:100%;padding:4px 0;color:#111;background:#fff;border:0;border-bottom:1px dotted #777;
