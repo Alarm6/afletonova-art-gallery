@@ -57,3 +57,25 @@
  linear-gradient(0deg,transparent 49.65%,#a5a19a 49.85%,#f9f9f8 50%,transparent 50.35%);
 }
 .kraft-seal { background:#fff;filter:none;box-shadow:0 1px 3px #0003; }
+
+#detail.gift-order .purchase-layout {
+ padding-top:calc(100dvh + var(--header-h) + 68px);
+}
+.kraft-wrap i {
+ background-size:100% 100%,100% 100%,360px 360px;
+ background-blend-mode:normal;
+ background-color:#ddd9cf;
+ filter:grayscale(.88);
+}
+.kraft-wrap .kraft-left {
+ background-image:linear-gradient(115deg,#fff4,transparent 50%,#55524d2e),linear-gradient(#fff9,#fff9),url('assets/kraft-natural.webp');
+}
+.kraft-wrap .kraft-right {
+ background-image:linear-gradient(90deg,transparent 43.7%,#403c343c 44%,#fff9 44.4%,transparent 46%,#4e49401f),linear-gradient(#fff9,#fff9),url('assets/kraft-natural.webp');
+}
+.kraft-wrap .kraft-top {
+ background-image:linear-gradient(164deg,#fff5,transparent 40%,#514c4436),linear-gradient(#fff9,#fff9),url('assets/kraft-natural.webp');
+}
+.kraft-wrap .kraft-bottom {
+ background-image:linear-gradient(16deg,#50493e29,transparent 50%,#fff6),linear-gradient(#fff9,#fff9),url('assets/kraft-natural.webp');
+}

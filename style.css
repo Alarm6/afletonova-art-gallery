@@ -230,3 +230,30 @@ button:not(.art):disabled{opacity:.35!important;cursor:default!important}
  #wall-view .room-dot { width:18px;height:18px;flex-basis:18px; }
 }
 @media(prefers-reduced-motion:reduce) { #wall-art { transition:none; } }
+
+/* Compact action buttons and intentional keyboard focus. */
+:root { --control-height:26px; --header-h:38px; }
+.site-header nav a[href],
+#detail .close,
+#detail button:not(.art),
+#wall-view button:not(.room-dot),
+.gallery-bottom button,
+.intro-foot a {
+ min-height:26px!important;
+ height:26px!important;
+ padding-inline:10px!important;
+ border-radius:6px!important;
+ font-size:10px!important;
+}
+.gallery-bottom button,
+#wall-view .room-window>button { width:26px!important;min-width:26px!important;padding:0!important; }
+#detail .buy-button { min-width:0;padding-inline:18px!important; }
+#detail .close { right:calc(3vw + 72px); }
+.brand img,.hero-logo img { user-select:none;-webkit-user-drag:none; }
+.brand:focus:not(:focus-visible),.hero-logo:focus:not(:focus-visible) { outline:none; }
+@media(max-width:700px) {
+ #detail .close { right:18px; }
+ .site-header nav a[href],
+ #detail button:not(.art),
+ #wall-view button:not(.room-dot) { height:28px!important;min-height:28px!important; }
+}

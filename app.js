@@ -12,6 +12,41 @@ const track=document.querySelector('#track'),viewport=document.querySelector('.v
 let activeWork=null,activeButton=null,transitioning=false;
 works.forEach((work,i)=>{const b=track.children[i];b.addEventListener('click',()=>openWork(work,b));});
 const detailImage=document.querySelector('#detail-img'),info=document.querySelector('.purchase-info');
+async function centerArtwork(image){
+ const frame=viewport.getBoundingClientRect();
+ const picture=image.getBoundingClientRect();
+ const start=viewport.scrollLeft;
+ const requested=start+picture.left+picture.width/2-frame.left-frame.width/2;
+ const target=Math.max(0,Math.min(requested,viewport.scrollWidth-viewport.clientWidth));
+ const offset=target-requested;
+ const duration=reduced?0:300;
+ const began=performance.now();
+ await new Promise(resolve=>{
+  function step(now){
+   const progress=duration?Math.min(1,(now-began)/duration):1;
+   const eased=1-Math.pow(1-progress,3);
+   viewport.scrollTo({left:start+(target-start)*eased,behavior:'instant'});
+   track.style.transform=offset?`translateX(${offset*eased}px)`:'';
+   if(progress<1)requestAnimationFrame(step);
+   else resolve();
+  }
+  requestAnimationFrame(step);
+ });
+ return image.getBoundingClientRect();
+}
+
+function animateArtworkFrom(previous,duration){
+ const target=detailImage.getBoundingClientRect();
+ if(reduced||!previous.width||!target.width)return Promise.resolve();
+ const x=previous.left+previous.width/2-target.left-target.width/2;
+ const y=previous.top+previous.height/2-target.top-target.height/2;
+ const scale=Math.min(previous.width/target.width,previous.height/target.height);
+ return detailImage.animate([
+  {transform:`translate(${x}px,${y}px) scale(${scale})`},
+  {transform:'none'}
+ ],{duration,easing:'cubic-bezier(.22,.75,.24,1)'}).finished;
+}
+
 async function openWork(w,button){
  if(gallery.inert||transitioning||dialog.open)return;
  transitioning=true;
@@ -22,18 +57,18 @@ async function openWork(w,button){
  detailImage.src=w.asset||`assets/work-${w.id}.webp`;detailImage.alt=w.title;detailImage.style.borderRadius=w.round?'50%':'0';
  document.querySelector('#detail-title').textContent=w.title;document.querySelector('#detail-size').textContent=w.size;document.querySelector('#on-wall').disabled=!(w.widthCm&&w.heightCm);document.querySelector('#on-wall').textContent=w.widthCm?'Посмотреть на стене':'Для просмотра на стене уточняется размер';document.querySelector('#detail-note').textContent=w.note||'Авторская картина';
  document.querySelector('#purchase-form').hidden=true;document.querySelector('#purchase-form').reset();document.querySelector('#purchase-status').textContent='';document.querySelector('#buy').hidden=false;document.querySelector('#buy').setAttribute('aria-expanded','false');
- await detailImage.decode().catch(()=>{});
+ const [previous]=await Promise.all([
+  centerArtwork(button.querySelector('img')),
+  detailImage.decode().catch(()=>{})
+ ]);
  dialog.showModal();
  dialog.scrollTop=purchaseTop();
+ track.style.transform='';
  document.querySelector('main').inert=true;
  document.body.classList.add('detail-open');
  if(!reduced){
-  const picture=detailImage.animate([
-   {opacity:0,transform:'translate(-10px, 8px) scale(.94)'},
-   {opacity:1,transform:'none'}
-  ],{duration:360,easing:'cubic-bezier(.2,.7,.2,1)'});
-  const caption=info.animate([{opacity:0},{opacity:1}],{duration:260});
-  await Promise.all([picture.finished,caption.finished]);
+  const caption=info.animate([{opacity:0},{opacity:1}],{duration:380});
+  await Promise.all([animateArtworkFrom(previous,560),caption.finished]);
  }
  transitioning=false;
 }

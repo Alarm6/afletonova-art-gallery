@@ -36,9 +36,30 @@ function resetGift(){giftPanel.hidden=true;dialog.classList.remove('gift-order')
 const originalOpenWork=openWork;openWork=async function(w,b){if(!gallery.inert&&!transitioning&&!dialog.open)resetGift();return originalOpenWork(w,b);};
 document.querySelector('#buy').onclick=async()=>{
  if(transitioning)return;transitioning=true;
- const column=document.querySelector('.painting-column'),slot=document.querySelector('.painting-slot'),r=detailImage.getBoundingClientRect();
- const paper=document.createElement('div');paper.className='kraft-wrap';paper.style.width=r.width+'px';paper.style.height=r.height+'px';paper.innerHTML='<i class="kraft-left"></i><i class="kraft-right"></i><i class="kraft-top"></i><i class="kraft-bottom"></i><span class="kraft-string"></span><img class="kraft-seal" src="assets/logo-black.svg" alt="Afletonova Art">';slot.append(paper);column.classList.add('gift-wrapped');dialog.classList.add('gift-order');
- document.querySelector('#buy').hidden=true;document.querySelector('#buy').setAttribute('aria-expanded','true');document.querySelector('#on-wall').hidden=true;
+ const column=document.querySelector('.painting-column');
+ const slot=document.querySelector('.painting-slot');
+ const buy=document.querySelector('#buy');
+ const previous=detailImage.getBoundingClientRect();
+ dialog.classList.add('gift-order');
+ column.classList.add('gift-wrapped');
+ buy.hidden=true;
+ buy.setAttribute('aria-expanded','true');
+ document.querySelector('#on-wall').hidden=true;
+ dialog.scrollTop=purchaseTop();
+ if(!reduced){
+  const stage=dialog.animate([
+   {backgroundColor:'#fff'},{backgroundColor:'#111'}
+  ],{duration:540,easing:'ease'});
+  await Promise.all([animateArtworkFrom(previous,540),stage.finished]);
+ }
+
+ const bounds=detailImage.getBoundingClientRect();
+ const paper=document.createElement('div');
+ paper.className='kraft-wrap';
+ paper.style.width=bounds.width+'px';
+ paper.style.height=bounds.height+'px';
+ paper.innerHTML='<i class="kraft-left"></i><i class="kraft-right"></i><i class="kraft-top"></i><i class="kraft-bottom"></i><span class="kraft-string"></span><img class="kraft-seal" src="assets/logo-black.svg" alt="Afletonova Art">';
+ slot.append(paper);
  if(!reduced)await Promise.all(paper.getAnimations({subtree:true}).map(a=>a.finished.catch(()=>{})));
  giftPanel.hidden=false;document.querySelector('#purchase-form').hidden=false;
  if(!reduced)giftPanel.animate([{opacity:0,transform:'translateY(25px)'},{opacity:1,transform:'none'}],{duration:650,easing:'ease-out'});
